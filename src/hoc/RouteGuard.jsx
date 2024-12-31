@@ -3,13 +3,15 @@ import useAuth from "../hooks/useAuth";
 import ProfileSetup from "../pages/onboarding/ProfileSetup";
 
 const isLoggedIn = (auth) => auth?.token && auth?.user;
-
 const hasProfile = (profile, profileError) => !profileError && profile;
-
 const hasRole = (auth, allowedRoles) => allowedRoles?.includes(auth?.user?.role);
 
 const RouteGuard = ({ type, allowedRoles }) => {
   const { auth, profile, profileLoading, profileError } = useAuth();
+
+  if (profileLoading) {
+    return <div>Loading...</div>; // Consistent loading state
+  }
 
   if (type === "guest") {
     if (isLoggedIn(auth)) {
@@ -23,25 +25,18 @@ const RouteGuard = ({ type, allowedRoles }) => {
     if (!isLoggedIn(auth)) {
       return <Navigate to="/auth/login" />;
     }
-    if (profileLoading) {
-      return <div>Loading...</div>;
-    }
     if (auth?.user.role === "admin") {
-      return <Navigate to={"/dashboard"} />;
+      return <Navigate to="/dashboard" />;
     }
-    if (hasProfile(profile, profileError) && auth?.user.role === "user") {
+    if (hasProfile(profile, profileError)) {
       return <Navigate to="/homepage" />;
     }
-
     return <ProfileSetup />;
   }
 
   if (type === "private") {
     if (!isLoggedIn(auth)) {
       return <Navigate to="/auth/login" />;
-    }
-    if (profileLoading) {
-      return <div>Loading...</div>;
     }
     if (!hasProfile(profile, profileError) && auth?.user.role === "user") {
       return <Navigate to="/welcome" />;

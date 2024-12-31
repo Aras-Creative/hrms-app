@@ -25,6 +25,7 @@ import CreateEmployeeContract from "../pages/dashboard/employee/create/CreateEmp
 import Settings from "../pages/dashboard/Settings";
 import Payroll from "../pages/dashboard/Payroll";
 import MyCalendar from "../pages/Calendar";
+import Notification from "../pages/user/Notification";
 // import ProfileSettings from "../pages/user/profile/ProfileSettings";
 // import Details from "../pages/user/profile/Details";
 // import Personal from "../pages/user/profile/details/Personal";
@@ -61,6 +62,7 @@ function RouterHandler() {
           <Route path="settings" element={<Menu />} />
           <Route path="me" element={<Details />} />
           <Route path="security" element={<Security />} />
+          <Route path="notification" element={<Notification />} />
 
           {/* <Route path="me" element={<Details />} />
           <Route path="/me">

@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import axios from "axios";
 import DashboardLayouts from "../layouts/DashboardLayouts";
 import FormInput from "../components/FormInput";
+import useFetch from "../hooks/useFetch";
 
 const localizer = momentLocalizer(moment);
 
@@ -14,7 +14,6 @@ const MyCalendar = () => {
   const [eventTitle, setEventTitle] = useState("");
   const [eventStart, setEventStart] = useState(new Date());
   const [eventEnd, setEventEnd] = useState(new Date());
-  const [holidays, setHolidays] = useState([]);
   const [eventType, setEventType] = useState("");
 
   const handleSelectSlot = ({ start, end }) => {
@@ -37,6 +36,20 @@ const MyCalendar = () => {
     }
   };
 
+  const handleEventClick = (event) => {
+    setEventTitle(event.title);
+    setEventStart(setToStartOfDay(event.start));
+    setEventEnd(setToStartOfDay(event.end));
+    setModalOpen(true);
+  };
+
+  const handleDeleteEvent = (event) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this event?");
+    if (confirmDelete) {
+      setEvents((prevEvents) => prevEvents.filter((e) => e.id !== event.id));
+    }
+  };
+
   const resetForm = () => {
     setEventTitle("");
     setEventStart(new Date());
@@ -50,44 +63,53 @@ const MyCalendar = () => {
     return newDate;
   };
 
+  const { submitData: createEvent, loading: createEventLoading, error: createEventError } = useFetch("/event/create");
+  const { responseData: allEvents, loading: eventsLoading, error: eventsError, refetch: eventRefetch } = useFetch("/event/all");
+  const [holidays, setHolidays] = useState();
+
   useEffect(() => {
-    const fetchHolidays = async () => {
-      try {
-        const response = await fetch(`https://api-harilibur.vercel.app/api`);
-        const result = await response.json();
-        const formattedHolidays = result
-          .filter((holiday) => holiday.is_national_holiday === true)
-          .map((holiday) => ({
-            start: setToStartOfDay(new Date(holiday.holiday_date)),
-            end: setToStartOfDay(new Date(holiday.holiday_date)),
-            title: holiday.holiday_name,
-          }));
-        setHolidays(formattedHolidays);
-      } catch (error) {
-        console.error("Error fetching holidays: ", error);
-      }
-    };
-
-    fetchHolidays();
-  }, []);
-
+    if (allEvents) {
+      setHolidays(allEvents);
+    }
+  }, [allEvents]);
   const saveEventToBackend = async (event) => {
     try {
-      // Uncomment the line below to save the event to your backend
-      // const response = await axios.post("http://localhost:5000/api/events", event);
-      console.log("Event saved:", event);
+      await createEvent(event);
+      eventRefetch();
     } catch (error) {
       console.error("Error saving event:", error);
     }
   };
 
-  const combinedEvents = [...events, ...holidays];
-
   return (
     <div>
       <DashboardLayouts>
         <div className="p-12">
-          <Calendar localizer={localizer} events={combinedEvents} selectable onSelectSlot={handleSelectSlot} style={{ height: 500 }} />
+          <Calendar
+            localizer={localizer}
+            events={holidays || []}
+            selectable
+            onSelectSlot={handleSelectSlot}
+            onSelectEvent={handleEventClick}
+            style={{ minHeight: "75vh" }}
+            views={["month", "day", "agenda"]}
+            startOfWeek={1}
+            step={30}
+            toolbarProps={{
+              className: "bg-emerald-700 text-white py-2 px-4 rounded-t-lg shadow-md",
+            }}
+            eventPropGetter={() => ({
+              className: "bg-emerald-700 text-white rounded-md px-2 py-1 shadow-md",
+            })}
+            dayPropGetter={(date) => {
+              const today = new Date();
+              const isToday =
+                date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
+              return {
+                className: `p-4 text-center ${isToday ? "bg-emerald-50" : ""}`,
+              };
+            }}
+          />
         </div>
 
         {modalOpen && (
@@ -126,13 +148,14 @@ const MyCalendar = () => {
               <FormInput
                 type="select"
                 label={"Event Type"}
+                value={{ label: eventType, value: eventType }}
                 options={[
-                  { value: "holiday", label: "Holiday" },
-                  { value: "event", label: "Event" },
-                  { value: "appointment", label: "Appointment" },
-                  { value: "meeting", label: "Meeting" },
-                  { value: "task", label: "Task" },
-                  { value: "celebration", label: "Celebration" },
+                  { value: "Holiday", label: "Holiday" },
+                  { value: "Event", label: "Event" },
+                  { value: "Appointment", label: "Appointment" },
+                  { value: "Meeting", label: "Meeting" },
+                  { value: "Task", label: "Task" },
+                  { value: "Celebration", label: "Celebration" },
                 ]}
                 onChange={(e) => setEventType(e.value)}
               />

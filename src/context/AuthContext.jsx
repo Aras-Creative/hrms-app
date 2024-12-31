@@ -11,7 +11,7 @@ export const AuthProvider = ({ children }) => {
   });
   const [settingsPreference, setSettingsPreference] = useState(null);
   const [profile, setProfile] = useState(null);
-  const [isVerified, setIsVerfied] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
 
   const {
     responseData: profileData,
@@ -39,28 +39,29 @@ export const AuthProvider = ({ children }) => {
     try {
       const decoded = jwtDecode(token);
       return decoded.exp * 1000 > Date.now();
-    } catch {
+    } catch (error) {
+      console.error("Error decoding token", error);
       return false;
     }
   };
 
   useEffect(() => {
-    if (auth.token) {
-      if (!isTokenValid(auth.token)) {
-        logout();
-      } else {
-        const decodedUser = jwtDecode(auth.token);
-        setAuth((prevAuth) => ({ ...prevAuth, user: decodedUser }));
-      }
+    if (auth.token && !isTokenValid(auth.token)) {
+      logout();
+    }
+  }, [auth.token]);
+
+  useEffect(() => {
+    if (auth.token && isTokenValid(auth.token)) {
+      const decodedUser = jwtDecode(auth.token);
+      setAuth((prevAuth) => ({ ...prevAuth, user: decodedUser }));
     }
   }, [auth.token]);
 
   useEffect(() => {
     if (profileData) {
       setProfile(profileData);
-    }
-    if (profileData?.documents?.some((doc) => doc?.documentName?.startsWith("KTPPhoto"))) {
-      setIsVerfied(true);
+      setIsVerified(profileData?.documents?.some((doc) => doc?.documentName?.startsWith("KTPPhoto")));
     }
   }, [profileData]);
 

@@ -71,7 +71,6 @@ const Dashboard = () => {
 
     socket.on("new_attendance", (data) => {
       setAttendances((prevAttendances) => {
-        console.log(prevAttendances);
         const existingIndex = prevAttendances?.findIndex((att) => att.employeeId === data.attendance.employeeId);
         if (existingIndex !== -1) {
           const updatedAttendances = [...prevAttendances];
@@ -83,30 +82,12 @@ const Dashboard = () => {
         }
         return [data.attendance, ...prevAttendances];
       });
+      attendancesDataRefetch();
     });
 
     return () => {
       socket.disconnect();
     };
-  }, []);
-
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch(`https://api-harilibur.vercel.app/api?month=12`);
-        const result = await response.json();
-        setData(result);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching data: ", error);
-        setLoading(false);
-      }
-    };
-
-    fetchData();
   }, []);
 
   const formatDate = (date) => {
@@ -139,7 +120,7 @@ const Dashboard = () => {
     });
   };
 
-  const checkTime = (timeToCheck, treshold) => {
+  const checkTime = (timeToCheck, treshold, isEarlyClockOutCheck = false) => {
     if (!timeToCheck) return false;
     const referenceTime = new Date();
     const [hours, minutes, seconds] = treshold.split(":");
@@ -149,6 +130,9 @@ const Dashboard = () => {
     const [checkHours, checkMinutes, checkSeconds] = timeToCheck.split(":");
     currentTime.setHours(checkHours, checkMinutes, checkSeconds);
 
+    if (isEarlyClockOutCheck) {
+      return currentTime <= referenceTime;
+    }
     return currentTime > referenceTime;
   };
 
@@ -226,10 +210,7 @@ const Dashboard = () => {
         if (!rowData) {
           return <span>Loading...</span>;
         }
-
-        const profileImage =
-          rowData.document?.[0]?.documentName && `http://localhost:3000/storage/document/${rowData.employeeId}/${rowData.document[0].documentName}`;
-
+        const profileImage = rowData.profilePicture && `http://localhost:3000/storage/document/${rowData.userId}/${rowData.profilePicture}`;
         return (
           <div className="flex items-center gap-3">
             {profileImage ? (
@@ -252,7 +233,7 @@ const Dashboard = () => {
       label: "Clock-in & Clock-out",
       render: (value, rowData) => (
         <div className="w-full flex items-center gap-3 whitespace-nowrap">
-          <h1 className={`${checkTime(rowData?.clockIn, "08:10:00") ? "text-red-500" : "text-slate-800"} text-sm `}>{rowData?.clockIn || "N/A"}</h1>
+          <h1 className={`${checkTime(rowData?.clockIn, "08:00:00") ? "text-red-500" : "text-slate-800"} text-sm `}>{rowData?.clockIn || "N/A"}</h1>
           <div className="flex items-center gap-1">
             <div className="flex items-center">
               <span className="w-2 h-2 bg-zinc-400 rounded-full"></span>
@@ -267,7 +248,9 @@ const Dashboard = () => {
               <span className="w-2 h-2 bg-zinc-400 rounded-full"></span>
             </div>
           </div>
-          <h1 className={`${checkTime(rowData?.clockOut, "16:30:00") ? "text-slate-800" : " text-red-500"} text-sm`}>{rowData?.clockOut || "N/A"}</h1>
+          <h1 className={`${checkTime(rowData?.clockOut, "16:30:00", true) ? "text-slate-800" : " text-red-500"} text-sm`}>
+            {rowData?.clockOut || "N/A"}
+          </h1>
         </div>
       ),
     },
@@ -409,16 +392,7 @@ const Dashboard = () => {
       ) : attendancesDataError ? (
         <p className="text-red-500">Failed to load employee data.</p>
       ) : (
-        data?.length > 0 &&
-        data?.map((item, idx) =>
-          item?.holiday_date === today ? (
-            <div key={idx} className="text-red-500">
-              Libur Nasional
-            </div>
-          ) : (
-            <Table title="Employee Table" icon="fa-users" columns={employeeColumns} data={attendances || []} />
-          )
-        )
+        <Table title="Employee Table" icon="fa-users" columns={employeeColumns} data={attendances || []} />
       )}
     </DashboardLayouts>
   );
