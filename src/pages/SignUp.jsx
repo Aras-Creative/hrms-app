@@ -1,34 +1,50 @@
-import React from 'react'
-import AuthLayouts from '../layouts/AuthLayouts'
-import InputForm from '../components/InputForm'
-import { Link } from 'react-router-dom'
-import Button from "../components/Button"
+import axios from "axios";
+import React, { useState, useEffect } from "react";
 
 const SignUp = () => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Mengambil data dari API saat komponen pertama kali dimuat
+  useEffect(() => {
+    // Ganti dengan URL API yang sesuai
+    const apiUrl = "http://localhost:3000/api/v1/auth/test"; // Contoh API
+
+    axios
+      .get(apiUrl)
+      .then((response) => {
+        setData(response.data); // Menyimpan data ke state
+        setLoading(false); // Menandakan loading selesai
+      })
+      .catch((err) => {
+        setError("Failed to fetch data"); // Menangani error
+        setLoading(false);
+      });
+  }, []); // useEffect hanya dipanggil sekali saat komponen pertama kali dimuat
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>{error}</div>;
+  }
+
   return (
     <div>
-        <AuthLayouts>
+      <h1>Data from API</h1>
+      <ul>
+        {data &&
+          data.map((post) => (
+            <li key={post.id}>
+              <h3>{post.title}</h3>
+              <p>{post.body}</p>
+            </li>
+          ))}
+      </ul>
+    </div>
+  );
+};
 
-<div className="mt-6 min-w-[450px] flex flex-col gap-4">
-<div className="w-full">
-            <h1 className="text-3xl font-bold">Sign Up</h1>
-            <h1 className="text-2xl font-bold text-zinc-800 pt-8">Step 1</h1>
-            <p className="text-sm text-zinc-800">Create your work account bscsbdbscbdsmbasmnhhshgfjh</p>
-            </div>
-    <InputForm id="fullNameInput" type="text" placeholder="@example.com" label="Email Address" icon="mage:email"/>
-    <InputForm id="passwordInput" type="password" placeholder="Password must be at least 8 characters long." label="Password" icon="solar:lock-linear"/>
-    <div className="flex justify-end w-full">
-    <Link href="/auth/forgot-password" className="text-blue-500 hover:underline text-end text-sm">Forgot Password?</Link>
-    </div>
-    <Button label="Sign Up"/>
-    <div className="flex justify-center items-center gap-1 text-zinc-800 text-sm">
-        <p>Don't have an account?</p>
-        <Link href="/auth/signup" className="text-blue-500 hover:underline text-end text-sm">Sign Up now</Link>
-    </div>
-</div>
-        </AuthLayouts>
-    </div>
-  )
-}
-
-export default SignUp
+export default SignUp;
