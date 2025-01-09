@@ -63,8 +63,8 @@ const MyCalendar = () => {
     return newDate;
   };
 
-  const { submitData: createEvent, loading: createEventLoading, error: createEventError } = useFetch("/event/create");
-  const { responseData: allEvents, loading: eventsLoading, error: eventsError, refetch: eventRefetch } = useFetch("/event/all");
+  const { submitData: createEvent } = useFetch("/event/create", { method: "POST" });
+  const { responseData: allEvents, refetch: eventRefetch } = useFetch("/event/all");
   const [holidays, setHolidays] = useState();
 
   useEffect(() => {
@@ -145,25 +145,27 @@ const MyCalendar = () => {
                 />
               </label>
 
-              <FormInput
-                type="select"
-                label={"Event Type"}
-                value={{ label: eventType, value: eventType }}
-                options={[
-                  { value: "Holiday", label: "Holiday" },
-                  { value: "Event", label: "Event" },
-                  { value: "Appointment", label: "Appointment" },
-                  { value: "Meeting", label: "Meeting" },
-                  { value: "Task", label: "Task" },
-                  { value: "Celebration", label: "Celebration" },
-                ]}
-                onChange={(e) => setEventType(e.value)}
-              />
+              <div className="mb-4">
+                <FormInput
+                  type="select"
+                  label={"Event Type"}
+                  value={{ label: eventType, value: eventType }}
+                  options={[
+                    { value: "Holiday", label: "Holiday" },
+                    { value: "Event", label: "Event" },
+                    { value: "Appointment", label: "Appointment" },
+                    { value: "Meeting", label: "Meeting" },
+                    { value: "Task", label: "Task" },
+                    { value: "Celebration", label: "Celebration" },
+                  ]}
+                  onChange={(e) => setEventType(e.value)}
+                />
+              </div>
               <div className="flex justify-end">
-                <button onClick={handleAddEvent} className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">
-                  Add Event
+                <button onClick={handleAddEvent} className="bg-emerald-700 text-white px-4 py-2 rounded-md hover:bg-emerald-600 transition">
+                  Save
                 </button>
-                <button onClick={resetForm} className="ml-2 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition">
+                <button onClick={resetForm} className="ml-2 bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition">
                   Cancel
                 </button>
               </div>

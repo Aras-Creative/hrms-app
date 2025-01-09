@@ -11,11 +11,7 @@ const Notification = () => {
   const { profile } = useAuth();
   const { responseData: notifications, loading: notificationLoading, error: notificationError } = useFetch(`/notification/${profile.userId}`);
 
-  const {
-    submitData: readNotification,
-    loading: readNotificationLoading,
-    error: readNotificationError,
-  } = useFetch(`/notification/${profile?.userId}/read`);
+  const { updateData: readNotification } = useFetch(`/notification/${profile?.userId}/read`, { method: "PUT" });
 
   useEffect(() => {
     readNotification();

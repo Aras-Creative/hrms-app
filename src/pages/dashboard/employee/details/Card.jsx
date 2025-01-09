@@ -17,7 +17,7 @@ const Card = ({ title, icon, children, onCancel, toggleEdit, isEditing, isEditab
             } px-2 text-xs flex items-center gap-1 py-2 rounded-xl ease-in-out transition-all duration-300`}
           >
             {isEditing ? <IconCheck size={18} /> : <IconPencil size={18} />}
-            <span className=" font-bold text-xs">{isEditing ? "Save" : "Edit"}</span>
+            <span className=" font-bold text-xs">{isEditing ? "Simpan" : "Edit"}</span>
           </button>
         )}
         {isEditing && (
@@ -27,7 +27,7 @@ const Card = ({ title, icon, children, onCancel, toggleEdit, isEditing, isEditab
             className=" bg-white px-2 text-xs flex items-center gap-1 py-2 rounded-xl border border-red-400 hover:bg-red-50 ease-in-out transition-all duration-300"
           >
             <IconX className={"text-red-500"} size={14} />
-            <span className="text-red-500 font-bold text-xs">Cancel</span>
+            <span className="text-red-500 font-bold text-xs">Batal</span>
           </button>
         )}
       </div>

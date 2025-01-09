@@ -1,7 +1,8 @@
 import Select from "react-select";
 import CurrencyInput from "../../../../components/CurrenyInput";
+import { formatPhoneNumber } from "../../../../utils/formatPhoneNumber";
 
-const FormInput = ({ type = "text", label, value, onChange, options, onEdit = true }) => {
+const FormInput = ({ type = "text", label, value, onChange, options, erorr, onEdit = true }) => {
   return (
     <>
       {type === "select" ? (
@@ -81,6 +82,25 @@ const FormInput = ({ type = "text", label, value, onChange, options, onEdit = tr
             intlConfig={{ locale: "id-ID", currency: "IDR", decimalSeparator: "," }}
             placeholder={placeholder || `Enter your ${label.toLowerCase()}`}
             disabled={disabled}
+            errors={erorr}
+          />
+        </div>
+      ) : type === "phone" ? (
+        <div className="flex flex-col gap-2 w-full">
+          <label htmlFor={label} className="text-zinc-500 text-sm">
+            {label}
+          </label>
+          <input
+            type={"number"}
+            name={label}
+            value={value}
+            onChange={onChange}
+            placeholder={`Input employee ${label.toLowerCase()}`}
+            className={`border-b ${
+              onEdit ? "border-zinc-500" : erorr ? "border-red-500" : "border-zinc-300"
+            }  outline-none text-sm w-full focus:border-zinc-500 py-2 bg-white`}
+            required
+            disabled={!onEdit}
           />
         </div>
       ) : (
@@ -94,10 +114,13 @@ const FormInput = ({ type = "text", label, value, onChange, options, onEdit = tr
             value={value}
             onChange={onChange}
             placeholder={`Input employee ${label.toLowerCase()}`}
-            className={`border-b ${onEdit ? "border-zinc-500" : "border-zinc-300"}  outline-none text-sm w-full focus:border-zinc-500 py-2 bg-white`}
+            className={`border-b ${
+              onEdit ? "border-zinc-500" : erorr ? "border-red-500" : "border-zinc-300"
+            }  outline-none text-sm w-full focus:border-zinc-500 py-2 bg-white`}
             required
             disabled={!onEdit}
           />
+          {erorr && <p className="text-xs text-red-500">{erorr}</p>}
         </div>
       )}
     </>

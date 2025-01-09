@@ -7,9 +7,12 @@ import FormInput from "../../../components/FormInput";
 import Datepicker from "../../../components/Datepicker";
 import useFetch from "../../../hooks/useFetch";
 import { useNavigate } from "react-router-dom";
+import { STORAGE_URL } from "../../../config";
+import Snackbar from "../../../components/Snackbar";
 
 const ProfileDetails = () => {
   const { profile, profileRefetch } = useAuth();
+  const [snackbar, setSnackbar] = useState({ text: "", show: false });
   const navigate = useNavigate();
 
   const [updatedProfileImage, setUpdatedProfileImage] = useState(null);
@@ -20,20 +23,15 @@ const ProfileDetails = () => {
     religion: profile?.religion || "",
     placeOfBirth: profile?.placeOfBirth || "",
     dateOfBirth: profile?.dateOfBirth || "",
-    typeOfBlood: profile?.typeOfBlood || "",
   });
   const [errors, setErrors] = useState({});
 
-  // Profile picture and storage URL
-  const profilePictureDocName =
-    profile?.document.find((doc) => doc.documentName.startsWith("profilePicture"))?.documentName || profile?.document[1]?.documentName;
-  const apiStoragePath = "http://localhost:3000/storage/document";
-  const profileImageUrl = `${apiStoragePath}/${profile.employeeId.replace(/\s+/g, "_")}/${profilePictureDocName}`;
+  const { responseData: ProfilePicture } = useFetch(`/employee/profile-picture/${profile.userId}`);
 
   // Fetch hook for submitting data
-  const { submitData, loading, error, responseData } = useFetch(
-    `/profile/update/${profile?.employeeId}`,
-    { method: "POST" },
+  const { updateData, loading } = useFetch(
+    `/profile/update/${profile?.userId}`,
+    { method: "PUT" },
     {
       headers: { "Content-Type": "multipart/form-data" },
     }
@@ -78,10 +76,10 @@ const ProfileDetails = () => {
     formData.append("profilePicture", profileFile);
     formData.append("data", JSON.stringify(profileData));
 
-    const { success, error: submitError } = await submitData(formData);
+    const { success, data, error: submitError } = await updateData(formData);
     if (success) {
-      profileRefetch();
-      navigate("/settings");
+      setSnackbar({ text: data.message, show: true });
+      setTimeout(() => setSnackbar({ text: "", show: false }), 2000);
     } else {
       const mappedErrors = submitError.reduce((acc, errorObj) => {
         for (let field in errorObj) {
@@ -110,17 +108,32 @@ const ProfileDetails = () => {
     { label: "Khonghucu", value: "Khonghucu" },
   ];
 
+  const getInitials = (name) => {
+    if (!name) return "";
+    const nameParts = name[0];
+    return nameParts;
+  };
+
+  const profileImageSrc = updatedProfileImage || `${STORAGE_URL}/document/${profile?.userId}/${ProfilePicture?.path}`;
+  const showPlaceholder = !updatedProfileImage && (!ProfilePicture || !ProfilePicture?.path);
+
   return (
-    <Layouts title="Personal Identity" backUrl="/settings">
+    <Layouts title="Identitas Pribadi" backUrl="/settings">
       <form className="w-full" onSubmit={handleSubmit} encType="multipart/form-data">
         <div className="w-full mt-12 flex flex-col justify-center items-center py-8">
           {/* Profile image */}
           <div className="relative">
-            <img
-              src={updatedProfileImage || profileImageUrl || avatarPlaceholder}
-              alt="Profile"
-              className="w-36 h-36 rounded-full border-4 border-white object-cover object-center shadow-md transition-transform duration-200 hover:scale-105"
-            />
+            {showPlaceholder ? (
+              <div className="w-36 h-36 rounded-full border-4 text-4xl border-white bg-gray-300 flex items-center justify-center text-slate-800 font-bold shadow-md">
+                {getInitials(profile?.fullName)} {/* Display initials */}
+              </div>
+            ) : (
+              <img
+                src={profileImageSrc}
+                alt="Profile"
+                className="w-36 h-36 rounded-full border-4 border-white object-cover object-center shadow-md transition-transform duration-200 hover:scale-105"
+              />
+            )}
             <div className="absolute bottom-0 right-1">
               <label htmlFor="profile-upload" className="flex justify-center gap-3 w-full items-center">
                 <div className="flex items-center justify-center w-10 h-10 bg-indigo-100 rounded-full cursor-pointer hover:bg-indigo-200 transition duration-200">
@@ -133,20 +146,22 @@ const ProfileDetails = () => {
 
           {/* Profile Form Inputs */}
           <div className="w-full px-6 mt-10">
-            <FormInput
-              type="text"
-              label="Full Name"
-              value={profileData.fullName}
-              onChange={(e) => handleDataChange("fullName", e.target.value)}
-              required
-              errors={errors?.fullName}
-            />
+            <div className="mb-4">
+              <FormInput
+                type="text"
+                label="Nama Lengkap"
+                value={profileData.fullName}
+                onChange={(e) => handleDataChange("fullName", e.target.value)}
+                required
+                errors={errors?.fullName}
+              />
+            </div>
 
-            <div className="grid grid-cols-2 gap-4 w-full">
+            <div className="grid grid-cols-2 mb-4 gap-4 w-full">
               <FormInput
                 type="select"
                 options={genderOptions}
-                label="Gender"
+                label="Jenis Kelamin"
                 value={{ label: profileData.gender, value: profileData.gender }}
                 onChange={(selectedOption) => handleDataChange("gender", selectedOption.value)}
                 errors={errors?.gender}
@@ -154,43 +169,28 @@ const ProfileDetails = () => {
               <FormInput
                 type="select"
                 options={religionOptions}
-                label="Religion"
+                label="Agama"
                 value={{ label: profileData.religion, value: profileData.religion }}
                 onChange={(selectedOption) => handleDataChange("religion", selectedOption.value)}
                 errors={errors?.religion}
               />
             </div>
-
-            <FormInput
-              type="text"
-              label="Place Of Birth"
-              value={profileData.placeOfBirth}
-              onChange={(e) => handleDataChange("placeOfBirth", e.target.value)}
-              required
-            />
-
-            <div className="grid grid-cols-2 gap-4 w-full">
-              <div className="mb-4">
-                <label htmlFor="dateOfBirth" className="text-sm block px-2 mb-2">
-                  Date Of Birth
-                </label>
-                <div className="flex items-center gap-3 rounded-full border border-gray-300 focus-within:border-indigo-500 px-2 py-1 mt-1">
-                  <Datepicker defaultDate={profileData.dateOfBirth} onChange={handleDatePick} />
-                </div>
-              </div>
+            <div className="mb-4 w-full">
               <FormInput
-                type="select"
-                options={[
-                  { label: "A", value: "A" },
-                  { label: "AB", value: "AB" },
-                  { label: "B", value: "B" },
-                  { label: "O", value: "O" },
-                ]}
-                label="Type Of Blood"
-                value={{ label: profileData.typeOfBlood, value: profileData.typeOfBlood }}
-                onChange={(selectedOption) => handleDataChange("typeOfBlood", selectedOption.value)}
-                errors={errors?.typeOfBlood}
+                type="text"
+                label="Tempat Lahir"
+                value={profileData.placeOfBirth}
+                onChange={(e) => handleDataChange("placeOfBirth", e.target.value)}
+                required
               />
+            </div>
+            <div className="mb-4">
+              <label htmlFor="dateOfBirth" className="text-sm block px-2 mb-2">
+                Tanggal Lahir
+              </label>
+              <div className="flex items-center gap-3 rounded-xl border border-gray-300 focus-within:border-indigo-500 px-2 py-0.5 mt-1">
+                <Datepicker position={"top-20"} label={"Select Birth Date"} defaultDate={profileData.dateOfBirth} onChange={handleDatePick} />
+              </div>
             </div>
           </div>
 
@@ -201,11 +201,12 @@ const ProfileDetails = () => {
               className="rounded-full w-full bg-indigo-500 text-white hover:bg-indigo-700 p-3 font-semibold transition-all duration-300 ease-in-out"
               disabled={loading}
             >
-              Save Changes
+              Simpan Perubahan
             </button>
           </div>
         </div>
       </form>
+      {snackbar.show && <Snackbar text={snackbar.text} show={snackbar.show} />}
     </Layouts>
   );
 };

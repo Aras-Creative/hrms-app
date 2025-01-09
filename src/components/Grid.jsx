@@ -9,7 +9,12 @@ const Grid = ({ data }) => {
       {data?.length > 0 ? (
         <div className="grid 2xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-2 gap-4">
           {data?.map((item, index) => (
-            <div key={index} className="bg-white h-full rounded-lg border shadow-sm border-b-4 border-b-emerald-700">
+            <div
+              key={index}
+              className={`bg-white h-full rounded-lg border shadow-sm border-b-4 ${
+                item.status === "active" ? "border-b-emerald-700" : "border-b-red-500"
+              }`}
+            >
               <div className="flex justify-end px-6 py-4">
                 <NavLink to={`/dashboard/employee/${item.user?.userId}/details`}>
                   <IconDots />
@@ -25,19 +30,19 @@ const Grid = ({ data }) => {
                 </div>
 
                 <div className="mt-4 bg-zinc-100 rounded-lg p-4 shadow-md w-full">
-                  <h2 className="font-semibold text-gray-800 whitespace-nowrap">Employee Details</h2>
+                  <h2 className="font-semibold text-gray-800 whitespace-nowrap">Detail Karyawan</h2>
                   <div className="mt-2">
                     <div className="flex justify-between py-2 border-b border-gray-300">
                       <span className="text-sm font-medium text-gray-600 flex gap-1 items-center whitespace-nowrap">
                         <IconGridScan size={18} />
-                        Employee ID:
+                        ID Karyawan:
                       </span>
                       <span className="text-sm text-gray-800 whitespace-nowrap">{item?.employeeId}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b border-gray-300">
                       <span className="text-sm font-medium text-gray-600 flex gap-1 items-center whitespace-nowrap">
                         <IconGenderBigender size={18} />
-                        Gender
+                        Jenis Kelamin
                       </span>
                       <span className="text-sm text-gray-800 whitespace-nowrap">{item.gender}</span>
                     </div>
@@ -46,14 +51,14 @@ const Grid = ({ data }) => {
                         <IconMail size={18} />
                         Email
                       </span>
-                      <span className="text-sm text-gray-800 whitespace-nowrap">{item.email}</span>
+                      <span className="text-sm text-gray-800 whitespace-nowrap">{item.email || "-"}</span>
                     </div>
                     <div className="flex justify-between py-2 border-gray-300">
                       <span className="text-sm font-medium text-gray-600 flex gap-1 items-center whitespace-nowrap">
                         <IconDeviceMobile size={18} />
-                        Phone Number
+                        Nomor Handphone
                       </span>
-                      <span className="text-gray-800 whitespace-nowrap">{item.phoneNumber}</span>
+                      <span className="text-gray-800 whitespace-nowrap">{item.phoneNumber || "-"}</span>
                     </div>
                   </div>
                 </div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, useParams } from "react-router-dom";
-import { IconAddressBook, IconChevronRight, IconId, IconMap2, IconUser } from "@tabler/icons-react";
+import { IconAddressBook, IconChevronRight, IconId, IconMap2, IconUser, IconUserFilled } from "@tabler/icons-react";
 import Datepicker from "../../../../components/Datepicker";
 import useFetch from "../../../../hooks/useFetch";
 import { genderOptions, religionOptions } from "../../../../utils/SelectOptions";
@@ -8,8 +8,17 @@ import FormInput from "./FormInput";
 import Card from "./Card";
 import { calculateAge } from "./utils";
 import Toast from "../../../../components/Toast";
+import { formatDate, handleDatePick } from "../../../../utils/dateUtils";
+import useFormHandler from "../../../../hooks/useFormHandler";
+import { handleToastTimeout } from "../../../../utils/handleToastTimeOut";
 
 const PersonalInformation = ({ data, refetch }) => {
+  const { employeeId } = useParams();
+  const { updateData } = useFetch(`/employee/${employeeId}/update`, { method: "POST" });
+  const [toast, setToast] = useState({ text: "", type: "" });
+  const [isFormEdit, setIsFormEdit] = useState({ personalInfo: false, addressInfo: false, contactInfo: false });
+  const [errors, setErrors] = useState({});
+
   const getInitialFormData = (data) => ({
     personalInfo: {
       fullName: data?.fullName || "",
@@ -17,9 +26,15 @@ const PersonalInformation = ({ data, refetch }) => {
       religion: data?.religion || "",
       placeOfBirth: data?.placeOfBirth || "",
       dateOfBirth: data?.dateOfBirth || "",
+      bpjsKesehatanNumber: data?.bpjsKesehatanNumber || "",
+      bpjsKetenagakerjaanNumber: data?.bpjsKetenagakerjaanNumber || "",
     },
     addressInfo: { address: data?.address || "" },
-    contactInfo: { email: data?.email || "", phoneNumber: data?.phoneNumber || "" },
+    contactInfo: {
+      email: data?.email || "",
+      phoneNumber: data?.phoneNumber || "",
+      emergencyContact: data?.emergencyContact || "",
+    },
     employementData: {
       jobRole: data?.jobRole?.jobRoleTitle || "",
       dateStarted: data?.contract?.startDate || "",
@@ -27,29 +42,15 @@ const PersonalInformation = ({ data, refetch }) => {
     },
   });
 
-  const { employeeId } = useParams();
-  const { updateData } = useFetch(`/employee/${employeeId}/update`, { method: "POST" });
-  const [toast, setToast] = useState({ text: "", type: "" });
-  const [isFormEdit, setIsFormEdit] = useState({ personalInfo: false, addressInfo: false, contactInfo: false });
-  const [formData, setFormData] = useState(getInitialFormData(data));
+  const { formData, handleSelect, handleFormInput, setFormData } = useFormHandler({
+    initialState: getInitialFormData(data),
+  });
+
+  const handleBirtDatePick = handleDatePick(setFormData)("personalInfo");
 
   useEffect(() => {
-    if (data) {
-      setFormData(getInitialFormData(data));
-    }
-  }, [data]);
-
-  useEffect(() => {
-    if (toast.text) {
-      const timer = setTimeout(() => setToast({ text: "", type: "" }), 3000);
-      return () => clearTimeout(timer);
-    }
+    handleToastTimeout(toast.text, setToast);
   }, [toast.text]);
-
-  const handleDatePick = (selectedDate) => {
-    const dateOnly = new Date(selectedDate).toLocaleDateString("en-CA");
-    setFormData((prev) => ({ ...prev, personalInfo: { ...prev.personalInfo, dateOfBirth: dateOnly } }));
-  };
 
   const toggleFormEdit = async (e, formName) => {
     const isEditing = isFormEdit[formName];
@@ -58,8 +59,19 @@ const PersonalInformation = ({ data, refetch }) => {
     if (isEditing) {
       e.preventDefault();
       const { success, data, error } = await updateData(formData[formName]);
-      setToast({ text: success ? data.message : error || "An error occurred", type: success ? "success" : "error" });
-      if (success) refetch();
+      if (error) {
+        const mappedErrors = error.reduce((acc, errorObj) => {
+          for (let field in errorObj) {
+            acc[field] = errorObj[field][0];
+          }
+          return acc;
+        }, {});
+        setErrors(mappedErrors);
+      }
+      if (success) {
+        setToast({ text: data.message, type: "success" });
+        refetch();
+      }
     }
   };
 
@@ -68,24 +80,13 @@ const PersonalInformation = ({ data, refetch }) => {
     setIsFormEdit((prev) => ({ ...prev, [formName]: false }));
   };
 
-  const handleChange = (formName, field) => (e) => {
-    const value = e.target.value;
-    setFormData((prev) => ({ ...prev, [formName]: { ...prev[formName], [field]: value } }));
-  };
-
-  const handleSelectChange = (formName, field) => (selectedOption) => {
-    setFormData((prev) => ({ ...prev, [formName]: { ...prev[formName], [field]: selectedOption.value } }));
-  };
-
-  const formatDate = (date) => new Date(date)?.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
-
   return (
-    <>
+    <div className="w-full h-full flex gap-4 flex-grow">
       <div className="flex flex-col gap-4 w-2/3">
         <form>
           <Card
-            title="Personal Information"
-            icon={<IconUser Filled />}
+            title="Informasi Personal"
+            icon={<IconUser />}
             isEditing={isFormEdit.personalInfo}
             onCancel={() => handleCancelEdit("personalInfo")}
             toggleEdit={(e) => toggleFormEdit(e, "personalInfo")}
@@ -93,47 +94,72 @@ const PersonalInformation = ({ data, refetch }) => {
             <div className="mt-6 w-full grid grid-cols-2 px-3 gap-6 pb-4">
               <FormInput
                 type="text"
-                label="Full Name"
+                label="Nama Lengkap"
                 value={formData.personalInfo.fullName}
-                onChange={handleChange("personalInfo", "fullName")}
+                onChange={handleFormInput("personalInfo", "fullName")}
                 onEdit={isFormEdit.personalInfo}
+                erorr={errors.fullName}
               />
               <FormInput
                 type="select"
-                label="Gender"
+                label="Jenis Kelamin"
                 options={genderOptions}
                 value={{ label: formData.personalInfo.gender, value: formData.personalInfo.gender }}
-                onChange={handleSelectChange("personalInfo", "gender")}
+                onChange={handleSelect("personalInfo", "gender")}
                 onEdit={isFormEdit.personalInfo}
+                erorr={errors.gender}
               />
               <FormInput
                 type="select"
-                label="Religion"
+                label="Agama"
                 options={religionOptions}
                 value={{ label: formData.personalInfo.religion, value: formData.personalInfo.religion }}
-                onChange={handleSelectChange("personalInfo", "religion")}
+                onChange={handleSelect("personalInfo", "religion")}
                 onEdit={isFormEdit.personalInfo}
+                erorr={errors.religion}
               />
               <FormInput
                 type="text"
-                label="Place Of Birth"
+                label="Tempat Lahir"
                 value={formData.personalInfo.placeOfBirth}
-                onChange={handleChange("personalInfo", "placeOfBirth")}
+                onChange={handleFormInput("personalInfo", "placeOfBirth")}
                 onEdit={isFormEdit.personalInfo}
+                erorr={errors.placeOfBirth}
               />
               <div className={`flex flex-col gap-1 border-b w-full ${isFormEdit.personalInfo ? "border-zinc-500" : "border-zinc-300"}`}>
                 <label htmlFor="birthDate" className="text-zinc-500 text-sm">
-                  Birth Date
+                  Tanggal Lahir
                 </label>
-                <Datepicker defaultDate={formData.personalInfo.dateOfBirth} onChange={handleDatePick} isDisabled={!isFormEdit.personalInfo} />
+                <Datepicker
+                  position={"top-30"}
+                  label={"Select Birth Date"}
+                  defaultDate={formData.personalInfo.dateOfBirth}
+                  onChange={(date) => handleBirtDatePick("dateOfBirth")(date)}
+                  isDisabled={!isFormEdit.personalInfo}
+                  erorr={errors.dateOfBirth}
+                />
               </div>
-              <FormInput type="text" label="Age" value={`${calculateAge(formData.personalInfo.dateOfBirth)} years old`} onEdit={false} />
+              <FormInput type="text" label="Usia" value={`${calculateAge(formData.personalInfo.dateOfBirth)} Tahun`} onEdit={false} />
+              <FormInput
+                type="number"
+                label="No. BPJS Kesehatan"
+                value={formData.personalInfo.bpjsKesehatanNumber}
+                onChange={handleFormInput("personalInfo", "bpjsKesehatanNumber")}
+                onEdit={isFormEdit.personalInfo}
+              />
+              <FormInput
+                type="number"
+                label="No. BPJS Ketenagakerjaan"
+                value={formData.personalInfo.bpjsKetenagakerjaanNumber}
+                onChange={handleFormInput("personalInfo", "bpjsKetenagakerjaanNumber")}
+                onEdit={isFormEdit.personalInfo}
+              />
             </div>
           </Card>
         </form>
 
         <Card
-          title="Address Information"
+          title="Informasi Alamat"
           icon={<IconMap2 />}
           isEditing={isFormEdit.addressInfo}
           onCancel={() => handleCancelEdit("addressInfo")}
@@ -142,9 +168,9 @@ const PersonalInformation = ({ data, refetch }) => {
           <div className="w-full flex items-center gap-24 mt-8 pr-44">
             <FormInput
               type="text"
-              label="Residential Address"
+              label="Alamat Tempat Tinggal"
               value={formData.addressInfo.address}
-              onChange={handleChange("addressInfo", "address")}
+              onChange={handleFormInput("addressInfo", "address")}
               onEdit={isFormEdit.addressInfo}
             />
             <NavLink
@@ -153,7 +179,7 @@ const PersonalInformation = ({ data, refetch }) => {
               target="_blank"
               rel="noopener noreferrer"
             >
-              View on map
+              Lihat di map
               <IconChevronRight />
             </NavLink>
           </div>
@@ -162,50 +188,56 @@ const PersonalInformation = ({ data, refetch }) => {
 
       <div className="flex flex-col gap-4 w-1/3">
         <Card
-          title="Contact Information"
+          title="Informasi Kontak"
           icon={<IconAddressBook />}
           isEditing={isFormEdit.contactInfo}
           onCancel={() => handleCancelEdit("contactInfo")}
           toggleEdit={(e) => toggleFormEdit(e, "contactInfo")}
         >
           <div className="w-full mt-6 flex flex-col gap-3">
-            <h1 className="w-full text-slate-800 font-semibold">Personal Contact</h1>
+            <h1 className="w-full text-slate-800 font-semibold">Kontak Pribadi</h1>
             <div className="w-full mt-3 grid grid-cols-2 gap-6 pb-4">
               <FormInput
                 type="email"
-                label="Email Address"
-                value={formData.contactInfo.email}
-                onChange={handleChange("contactInfo", "email")}
+                label="Alamat Email"
+                value={formData.contactInfo.email || "-"}
+                onChange={handleFormInput("contactInfo", "email")}
                 onEdit={isFormEdit.contactInfo}
               />
               <FormInput
                 type="text"
-                label="Phone Number"
-                value={formData.contactInfo.phoneNumber}
-                onChange={handleChange("contactInfo", "phoneNumber")}
+                label="Nomor Handphone"
+                value={formData.contactInfo.phoneNumber || "-"}
+                onChange={handleFormInput("contactInfo", "phoneNumber")}
                 onEdit={isFormEdit.contactInfo}
               />
             </div>
           </div>
           <div className="w-full mt-4 flex flex-col">
-            <h1 className="w-full text-slate-800 font-semibold mb-2">Other Contact</h1>
+            <h1 className="w-full text-slate-800 font-semibold mb-2">Kontak Lain</h1>
             <div className="w-full grid grid-cols-2 gap-4">
-              <p className="text-zinc-500 text-sm">Not Provided</p>
+              <FormInput
+                type="text"
+                label="Kontak Darurat"
+                value={formData.contactInfo.emergencyContact || "-"}
+                onChange={handleFormInput("contactInfo", "emergencyContact")}
+                onEdit={isFormEdit.contactInfo}
+              />
             </div>
           </div>
         </Card>
 
-        <Card title="Employment Overview" icon={<IconId />} isEditable={false}>
+        <Card title="Ringkasan Karyawan" icon={<IconId />} isEditable={false}>
           <div className="mt-6 w-full grid grid-cols-2 gap-6 pb-4">
-            <FormInput type="text" label="Date Started" value={formatDate(formData.employementData.dateStarted)} onEdit={false} />
-            <FormInput type="text" label="Employment Type" value={formData.employementData.employementType} onEdit={false} />
+            <FormInput type="text" label="Tanggal Bergabung" value={formatDate(formData.employementData.dateStarted)} onEdit={false} />
+            <FormInput type="text" label="Tipe Karyawan" value={formData.employementData.employementType} onEdit={false} />
           </div>
-          <FormInput type="text" label="Job Role" value={formData.employementData.jobRole || "Not Assigned"} onEdit={false} />
+          <FormInput type="text" label="Job Role" value={formData.employementData.jobRole || "-"} onEdit={false} />
         </Card>
 
         {toast.text && <Toast type={toast.type || "error"} text={toast.text} onClick={() => setToast({ text: "", type: "" })} />}
       </div>
-    </>
+    </div>
   );
 };
 

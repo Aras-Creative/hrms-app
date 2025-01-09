@@ -1,6 +1,6 @@
 import React from "react";
 import FormInput from "../../components/FormInput";
-import bankOptions from "../../utils/BankOptions";
+import { bankOptions } from "../../utils/SelectOptions";
 
 const FifthStep = ({ profileData, setProfileData }) => {
   return (

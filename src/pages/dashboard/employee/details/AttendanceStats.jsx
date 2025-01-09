@@ -5,11 +5,11 @@ import useFetch from "../../../../hooks/useFetch";
 
 // Constants
 const STAT_TYPES = [
-  { key: "dayOff", label: "Day Off" },
-  { key: "lateClockIn", label: "Late Clock-In" },
-  { key: "earlyClockOut", label: "Early Clock-Out" },
-  { key: "noClockOut", label: "No Clock-Out" },
-  { key: "absent", label: "Absent" },
+  { key: "dayOff", label: "Cuti" },
+  { key: "lateClockIn", label: "Terlambat" },
+  { key: "earlyClockOut", label: "Pulang Awal" },
+  { key: "noClockOut", label: "Tidak Absen Pulang" },
+  { key: "absent", label: "Tidak Hadir" },
 ];
 
 const currentDate = new Date();
@@ -33,16 +33,16 @@ const calculateStats = (data) => {
   };
   data.forEach((entry) => {
     switch (entry.status) {
-      case "Leave":
+      case "Cuti":
         stats.dayOff++;
         break;
-      case "Late":
+      case "Terlambat":
         stats.lateClockIn++;
         break;
-      case "Early Clock Out":
+      case "Pulang Awak":
         stats.earlyClockOut++;
         break;
-      case "Absent":
+      case "Tidak Hadir":
         stats.absent++;
         break;
       default:
@@ -66,7 +66,7 @@ const StatCard = ({ label, current, previous }) => {
           {diff > 0 ? "+" : ""}
           {diff}
         </span>
-        <span className="text-zinc-400 text-xs font-semibold"> vs last month</span>
+        <span className="text-zinc-400 text-xs font-semibold"> vs bulan lalu</span>
       </div>
     </div>
   );

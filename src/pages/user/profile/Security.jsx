@@ -5,7 +5,7 @@ import { NavLink } from "react-router-dom";
 
 const Security = () => {
   return (
-    <Layouts title={"Privacy and Security Details"} backUrl={"/settings"}>
+    <Layouts title={"Kemanan dan Privasi"} backUrl={"/settings"}>
       <div className="w-full h-screen bg-white">
         <div className="w-full pt-16 bg-white flex felx-col">
           <NavLink
@@ -14,7 +14,7 @@ const Security = () => {
           >
             <div className="flex gap-3 items-center">
               <IconAddressBook />
-              <h1 className="text-sm font-semibold text-slate-800">Privacy and Contact Information</h1>
+              <h1 className="text-sm font-semibold text-slate-800">Privasi dan Informasi Kontak</h1>
             </div>
 
             <IconChevronRight />
@@ -28,7 +28,7 @@ const Security = () => {
           >
             <div className="flex gap-3 items-center">
               <IconPasswordUser />
-              <h1 className="text-sm font-semibold text-slate-800">Password and Security</h1>
+              <h1 className="text-sm font-semibold text-slate-800">Kata sandi dan Keamanan</h1>
             </div>
 
             <IconChevronRight />

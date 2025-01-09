@@ -1,6 +1,7 @@
 import React from "react";
 import Select from "react-select";
 import CurrencyInput from "../components/CurrenyInput";
+import { formatPhoneNumber } from "../utils/formatPhoneNumber";
 
 const FormInput = ({
   label,
@@ -10,10 +11,14 @@ const FormInput = ({
   options,
   placeholder,
   formatOptionLabel,
+  filterOption,
   type = "text",
+  readOnly = false,
   errors,
   disabled,
   border = "border",
+  getOptionLabel,
+  getOptionValue,
 }) => {
   return (
     <div>
@@ -21,7 +26,11 @@ const FormInput = ({
         {label}
       </label>
       {type === "select" ? (
-        <div className="flex items-center whitespace-nowrap gap-3 rounded-xl border border-gray-300 focus-within:border-emerald-700 px-2 py-1 mt-1 bg-white">
+        <div
+          className={`flex items-center whitespace-nowrap gap-3 rounded-xl border ${
+            errors ? "border-red-500" : "border-gray-300"
+          } focus-within:border-slate-700 px-2 py-1 mt-1 bg-white`}
+        >
           <Select
             options={options}
             value={value}
@@ -30,6 +39,10 @@ const FormInput = ({
             placeholder={placeholder || `Select ${label}...`}
             className="w-full"
             isDisabled={disabled}
+            filterOption={filterOption}
+            getOptionLabel={getOptionLabel}
+            getOptionValue={getOptionValue}
+            isSearchable={true}
             styles={{
               control: (base, state) => ({
                 ...base,
@@ -60,6 +73,7 @@ const FormInput = ({
               menu: (base) => ({
                 ...base,
                 backgroundColor: "white",
+                zIndex: 999,
               }),
               option: (base, state) => ({
                 ...base,
@@ -82,9 +96,10 @@ const FormInput = ({
           onChange={onChange}
           className={`w-full h-${height || "44"} px-3 py-2.5 rounded-xl border ${
             errors ? "border-red-500" : "border-gray-300"
-          } focus:border-emerald-700 outline-none`}
+          } focus:border-slate-700 outline-none`}
           placeholder={placeholder || `Enter your ${label}`}
           disabled={disabled}
+          readOnly={readOnly}
         />
       ) : type === "currency" ? (
         <CurrencyInput
@@ -97,6 +112,7 @@ const FormInput = ({
           intlConfig={{ locale: "id-ID", currency: "IDR", decimalSeparator: "," }}
           placeholder={placeholder || `Enter your ${label.toLowerCase()}`}
           disabled={disabled}
+          readOnly={readOnly}
         />
       ) : type === "switch" ? (
         <div className="px-2">
@@ -109,6 +125,20 @@ const FormInput = ({
             ></div>
           </div>
         </div>
+      ) : type === "phone" ? (
+        <input
+          type={"text"}
+          id={label}
+          value={value}
+          onChange={onChange}
+          className={`w-full px-3 py-2.5 rounded-xl ${border} ${
+            errors ? "border-red-500" : "border-gray-300"
+          } disabled:text-zinc-500 focus:border-slate-700 outline-none`}
+          placeholder={placeholder || `Enter your ${label.toLowerCase()}`}
+          disabled={disabled}
+          readOnly={readOnly}
+          onInput={(e) => formatPhoneNumber(e)}
+        />
       ) : (
         <input
           type={type}
@@ -117,9 +147,10 @@ const FormInput = ({
           onChange={onChange}
           className={`w-full px-3 py-2.5 rounded-xl ${border} ${
             errors ? "border-red-500" : "border-gray-300"
-          } disabled:text-zinc-500 focus:border-emerald-700 outline-none`}
+          } disabled:text-zinc-500 focus:border-slate-700 outline-none`}
           placeholder={placeholder || `Enter your ${label.toLowerCase()}`}
           disabled={disabled}
+          readOnly={readOnly}
         />
       )}
       {errors && <p className="text-red-500 text-xs mt-2 px-3">{errors}</p>}

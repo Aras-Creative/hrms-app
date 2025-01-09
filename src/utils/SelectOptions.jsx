@@ -1,16 +1,16 @@
-import React, { useEffect } from "react";
-import BCAIcon from "../assets/bca-bank.png";
-import MandiriIcon from "../assets/mandiri.png";
-import BNIIcon from "../assets/bni.png";
-import BRIIcon from "../assets/bri.png";
-import CitiBankIcon from "../assets/citibank.png";
-import DanamonIcon from "../assets/danamon.png";
-import PermataIcon from "../assets/permata.png";
-import BTPNIcon from "../assets/btpn.png";
-import OCBCIcon from "../assets/ocbc.png";
-import BNISyariahIcon from "../assets/bni-syariah.png";
-import BSIIcon from "../assets/bsi.png";
-import CIMBNiagaIcon from "../assets/cimb.png";
+import React from "react";
+import BCAIcon from "../assets/bank-logo/bca-bank.webp";
+import MandiriIcon from "../assets/bank-logo/mandiri.webp";
+import BNIIcon from "../assets/bank-logo/bni.webp";
+import BRIIcon from "../assets/bank-logo/bri.webp";
+import CitiBankIcon from "../assets/bank-logo/citibank.webp";
+import DanamonIcon from "../assets/bank-logo/danamon.webp";
+import PermataIcon from "../assets/bank-logo/permata.webp";
+import BTPNIcon from "../assets/bank-logo/btpn.webp";
+import OCBCIcon from "../assets/bank-logo/ocbc.webp";
+import BNISyariahIcon from "../assets/bank-logo/bni-syariah.webp";
+import BSIIcon from "../assets/bank-logo/bsi.webp";
+import CIMBNiagaIcon from "../assets/bank-logo/cimb.webp";
 import { IconContract, IconFileTime, IconGenderFemale, IconGenderMale, IconHourglass } from "@tabler/icons-react";
 import axiosInstance from "./axiosInstance";
 
@@ -24,9 +24,9 @@ export const religionOptions = [
 ];
 
 export const genderOptions = [
-  { label: "Male", value: "Male" },
-  { label: "Female", value: "Female" },
-  { label: "Other", value: "Other" },
+  { label: "Laki-laki", value: "Laki-laki" },
+  { label: "Perempuan", value: "Perempuan" },
+  { label: "Lainnya", value: "Lainnya" },
 ];
 
 export const bankOptions = [
@@ -145,28 +145,25 @@ export const genderFilterOptions = [
     label: (
       <div className="flex items-center gap-1">
         <IconGenderMale size={18} />
-        <span className="text-sm text-zinc-800">Male</span>
+        <span className="text-sm text-zinc-800">Laki-laki</span>
       </div>
     ),
-    value: "Male",
+    value: "Laki-laki",
   },
   {
     label: (
       <div className="flex items-center gap-1">
         <IconGenderFemale size={18} />
-        <span className="text-sm text-zinc-800">Female</span>
+        <span className="text-sm text-zinc-800">Perempuan</span>
       </div>
     ),
-    value: "Female",
+    value: "Perempuan",
   },
 ];
 
-export const fetchJobRoles = async (filter, dispatch, departmentId) => {
+export const fetchJobRoles = async (filter, dispatch) => {
   if (filter) {
     let url = `/jobrole`;
-    if (departmentId) {
-      url = `/jobrole?dept=${departmentId}`;
-    }
     try {
       const result = await axiosInstance.get(url);
       if (result.data.code === 200) {
@@ -178,23 +175,6 @@ export const fetchJobRoles = async (filter, dispatch, departmentId) => {
       }
     } catch (error) {
       console.error("Error fetching job roles:", error);
-    }
-  }
-};
-
-export const fetchDepartment = async (filter, dispatch) => {
-  if (filter) {
-    try {
-      const result = await axiosInstance.get("/department");
-      if (result.data.code === 200) {
-        const departmentOptions = result.data.content.map((department) => ({
-          label: department?.departmentName,
-          value: department.departmentId,
-        }));
-        dispatch({ type: "SET_DEPARTMENT_OPTIONS", payload: departmentOptions });
-      }
-    } catch (error) {
-      console.error("Error fetching departments:", error);
     }
   }
 };
@@ -221,4 +201,23 @@ export const employementStatusOptions = [
     label: <LabelEmployementStatus label={"Part Time"} />,
     value: "Part Time",
   },
+];
+
+export const SalaryTypeOptions = [
+  {
+    label: "Monthly",
+    value: "Monthly",
+  },
+  { label: "Weekly", value: "Weekly" },
+  { label: "Daily", value: "Daily" },
+  { label: "Hourly", value: "Hourly" },
+];
+
+export const attendanceFilter = [
+  { label: "Pilih Filter", value: null },
+  { label: "Terlambat", value: "Late" },
+  { label: "Tepat waktu", value: "Present" },
+  { label: "Istirahat", value: "Break time" },
+  { label: "Pulang Awal", value: "Early Clock Out" },
+  { label: "Cuti/Izin", value: "Leave" },
 ];

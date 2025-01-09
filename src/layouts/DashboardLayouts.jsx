@@ -1,15 +1,48 @@
-import React from "react";
-import { Link } from "react-router-dom"; // Pastikan Anda mengimpor Link jika menggunakan react-router-dom
+import React, { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import { IconBell, IconMail } from "@tabler/icons-react";
+import { getGreeting } from "../utils/dateUtils";
+import { useCurrentTime } from "../hooks/useCurrentTime";
+import { initializeSocket } from "../utils/WebSocket";
+import { BASE_API_URL } from "../config";
+import Notification from "../components/Notification ";
+import useFetch from "../hooks/useFetch";
+import { RequestNotificationPermission, showDesktopNotification } from "../components/RequestNotificationPermission";
 
 const DashboardLayouts = ({ children }) => {
-  const toggleDropdown = (event) => {
-    const dropdownMenu = document.getElementById("dropdownMenu");
-    dropdownMenu.classList.toggle("hidden");
+  const [showNotification, setShowNotification] = useState(false);
+  const [notifBadge, setNotifBadge] = useState(false);
+  const { responseData: notifications, refetch } = useFetch(`/dashboard/notifications`);
+
+  useEffect(() => {
+    const cleanupSocket = initializeSocket(
+      `${BASE_API_URL}admin`,
+      {
+        withCredentials: true,
+        transports: ["websocket", "polling"],
+      },
+      {
+        notification: (data) => {
+          setNotifBadge(true);
+          setShowNotification(true);
+          showDesktopNotification(data);
+
+          setTimeout(() => {
+            setShowNotification(false);
+          }, 10000);
+        },
+      }
+    );
+    RequestNotificationPermission();
+    return cleanupSocket;
+  }, []);
+
+  const currentTime = useCurrentTime();
+  const handleShowNotification = () => {
+    setShowNotification((prev) => !prev);
   };
 
-  const NavbarItems = [];
+  const hasUnreadNotification = notifications?.some((notification) => !notification.isRead);
 
   return (
     <div className="flex h-screen flex-col relative w-full mx-auto">
@@ -18,38 +51,10 @@ const DashboardLayouts = ({ children }) => {
           <img className="w-44" src="/image/aras-logo.webp" alt="Aras Creative Logo" />
         </div>
 
-        <div className="flex gap-3 items-center">
-          <button className="rounded-xl p-3 bg-slate-600 hover:bg-slate-700 transition-all duration-300 ease-in-out text-slate-200">
-            <div className="relative">
-              <IconBell />
-              <div className="absolute bg-red-500 h-2 w-2 top-0 right-0.5 rounded-full"></div>
-            </div>
-          </button>
-          <button className="rounded-xl p-3 bg-slate-600 hover:bg-slate-700 transition-all duration-300 ease-in-out text-slate-200">
-            <div className="relative">
-              <IconMail />
-              <div className="absolute bg-red-500 h-2 w-2 top-0 right-0 rounded-full"></div>
-            </div>
-          </button>
-
-          <div className="relative items-center mt-1">
-            <button className="rounded-full focus:outline-none" onClick={toggleDropdown}>
-              <img className="w-10 h-10 rounded-full" src="/img/avatar.png" alt="User Avatar" />
-            </button>
-
-            <div id="dropdownMenu" className="hidden absolute right-0 mt-2 w-48 bg-slate shadow-lg rounded-lg py-2 z-10">
-              <a href="#" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                Profile
-              </a>
-              <a href="#" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                Settings
-              </a>
-              <form action="/logout" method="POST">
-                <button type="submit" className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100">
-                  Logout
-                </button>
-              </form>
-            </div>
+        <div className="flex gap-3 items-center text-end">
+          <div className="flex flex-col gap-1 text-white">
+            <h1 className="text-lg">Now is {currentTime.format("hh:mm A")}</h1>
+            <p className="text-sm text-white">{getGreeting()}</p>
           </div>
         </div>
       </header>
@@ -64,7 +69,36 @@ const DashboardLayouts = ({ children }) => {
             <div className="w-full bg-zinc-100 flex-1">
               <section className="main-content flex-1 2xl:p-6 p-4">{children}</section>
             </div>
-            <footer className="mt-4 text-center text-gray-600 w-full text-sm py-4">© 2024 Aras Creative. All rights reserved.</footer>
+            <div className="flex items-center">
+              <footer className="mt-4 text-center text-gray-600 w-full text-sm py-4">
+                © {new Date().getFullYear()} Aras Creative. All rights reserved.
+              </footer>
+              <div className="w-full flex flex-1 items-center justify-end pr-8 py-6">
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={handleShowNotification}
+                    className="rounded-full p-4 bg-slate-800 hover:bg-slate-700 transition-all duration-300 ease-in-out text-slate-200"
+                  >
+                    <div className="relative">
+                      <IconBell />
+                      {(notifBadge || hasUnreadNotification) && <div className="absolute bg-red-500 h-2 w-2 top-0 right-0.5 rounded-full"></div>}
+                    </div>
+                  </button>
+                  <div className="absolute bottom-0 flex-row-reverse right-16">
+                    {showNotification && (
+                      <Notification
+                        onClose={() => {
+                          setShowNotification((prev) => !prev);
+                          setNotifBadge(false);
+                          refetch();
+                        }}
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           </main>
         </div>
       </div>

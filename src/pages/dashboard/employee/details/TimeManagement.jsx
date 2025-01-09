@@ -173,13 +173,29 @@ const ProgressBar = ({ attendance }) => {
   const renderProgressSegments = (percentages) => {
     const { latePercentage, workBeforeBreakPercentage, breakPercentage, workAfterBreakPercentage, earlyClockOutPercentage } = percentages;
 
+    const segments = [
+      { width: latePercentage, color: "bg-red-500", label: "Late" },
+      { width: workBeforeBreakPercentage, color: "bg-blue-500", label: "Working time" },
+      { width: breakPercentage, color: "bg-teal-500", label: "Break Time" },
+      { width: workAfterBreakPercentage, color: "bg-blue-500", label: "Working Time" },
+      { width: earlyClockOutPercentage, color: "bg-orange-500", label: "Early Clock Out" },
+    ];
+
+    let currentPosition = 0; // Tracking the cumulative width for position
+
     return (
       <>
-        {latePercentage > 0 && <ProgressSegment width={latePercentage} color="bg-red-500" label="Late" />}
-        {workBeforeBreakPercentage > 0 && <ProgressSegment width={workBeforeBreakPercentage} color="bg-blue-500" label="Working time" />}
-        {breakPercentage > 0 && <ProgressSegment width={breakPercentage} color="bg-teal-500" label="Break Time" />}
-        {workAfterBreakPercentage > 0 && <ProgressSegment width={workAfterBreakPercentage} color="bg-blue- 500" label="Working Time" />}
-        {earlyClockOutPercentage > 0 && <ProgressSegment width={earlyClockOutPercentage} color="bg-orange-500" label="Early Clock Out" />}
+        {segments
+          .filter((segment) => segment.width > 0)
+          .map((segment, index) => {
+            const segmentStyle = {
+              width: `${segment.width}%`,
+              left: `${currentPosition}%`, // Positioning the segment based on previous segments
+            };
+            currentPosition += segment.width; // Update the position for the next segment
+
+            return <ProgressSegment key={index} width={segment.width} color={segment.color} label={segment.label} style={segmentStyle} />;
+          })}
       </>
     );
   };
@@ -187,20 +203,20 @@ const ProgressBar = ({ attendance }) => {
   return <div className="relative h-6 w-full flex bg-gray-200 rounded overflow-hidden">{renderProgressBar()}</div>;
 };
 
-const ProgressSegment = ({ width, color, label }) => (
+const ProgressSegment = ({ width, color, label, style }) => (
   <div
-    className={`${color} h-full absolute rounded text-xs overflow-hidden flex justify-center text-center items-center text-white whitespace-nowrap font-semibold`}
-    style={{ width: `${width}%` }}
+    className={`${color} h-full absolute rounded text-xs overflow-hidden flex justify-center items-center text-white whitespace-nowrap font-semibold`}
+    style={style} // Apply the calculated style here
   >
     {label}
   </div>
 );
 
 const StatusIndicator = ({ status }) => {
-  const bgColor = status === "Leave" ? "bg-yellow-500" : "bg-red-500";
+  const bgColor = status === "Leave" ? "bg-yellow-500" : status === "Holiday" ? "bg-emerald-700" : "bg-red-500";
   return (
     <div className={`h-full w-full ${bgColor} flex justify-center items-center text-xs text-white font-semibold`}>
-      {status === "Leave" ? "Leave" : "Absent"}
+      {status === "Leave" ? "Leave" : status === "Holiday" ? "Holiday" : "Absent"}
     </div>
   );
 };

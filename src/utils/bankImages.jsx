@@ -1,15 +1,17 @@
-import BCABank from "../assets/bca-bank.png";
-import BNIBank from "../assets/BNI.png";
-import BNISBank from "../assets/bni-syariah.png";
-import BRIBank from "../assets/bri.png";
-import BSIBank from "../assets/bsi.png";
-import BTPNBank from "../assets/btpn.png";
-import CIMBBank from "../assets/cimb.png";
-import CitiBank from "../assets/citibank.png";
-import DanamonBank from "../assets/danamon.png";
-import MandiriBank from "../assets/mandiri.png";
-import OCBCBank from "../assets/ocbc.png";
-import PermataBank from "../assets/permata.png";
+import BCABank from "../assets/bank-logo/bca-bank.webp";
+import BNIBank from "../assets/bank-logo/BNI.webp";
+import BNISBank from "../assets/bank-logo/bni-syariah.webp";
+import BRIBank from "../assets/bank-logo/bri.webp";
+import BSIBank from "../assets/bank-logo/bsi.webp";
+import BTPNBank from "../assets/bank-logo/btpn.webp";
+import CIMBBank from "../assets/bank-logo/cimb.webp";
+import CitiBank from "../assets/bank-logo/citibank.webp";
+import DanamonBank from "../assets/bank-logo/danamon.webp";
+import MandiriBank from "../assets/bank-logo/mandiri.webp";
+import OCBCBank from "../assets/bank-logo/ocbc.webp";
+import PermataBank from "../assets/bank-logo/permata.webp";
+import BPJSLogoKS from "../assets/bpjs_ks.webp";
+import BPJSLogoKT from "../assets/bpjs_kt.webp";
 
 // Objek yang menyimpan gambar-gambar bank
 const bankImages = {
@@ -34,4 +36,13 @@ const bankImages = {
  */
 export const getBankImage = (bankName) => {
   return bankImages[bankName] || null; // Mengembalikan gambar bank atau null jika tidak ada
+};
+
+const bpjsImage = {
+  BPJSKT: BPJSLogoKT,
+  BPJSKS: BPJSLogoKS,
+};
+
+export const getBPJSImage = (bpjsName) => {
+  return bpjsImage[bpjsName] || null;
 };

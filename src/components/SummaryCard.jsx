@@ -1,23 +1,5 @@
 import React from "react";
 
-const getChangeForDate = (date, items) => {
-  const today = items.find((item) => item.date === date);
-  const yesterday = items.find((item) => {
-    const todayDate = new Date(date);
-    const yesterdayDate = new Date(todayDate);
-    yesterdayDate.setDate(todayDate.getDate() - 1);
-    return item.date === yesterdayDate.toISOString().split("T")[0];
-  });
-
-  if (today && yesterday) {
-    return Object.keys(today.change).reduce((acc, key) => {
-      acc[key] = today.change[key] - (yesterday.change[key] || 0);
-      return acc;
-    }, {});
-  }
-  return {};
-};
-
 const SummaryCard = ({ title, icon, items, width }) => {
   return (
     <div className={`${width} bg-white p-4 rounded-lg border-zinc-200 border whitespace-nowrap`}>
@@ -39,7 +21,7 @@ const SummaryCard = ({ title, icon, items, width }) => {
               <span className={`text-xs font-semibold ${item.change > 0 ? "text-blue-500" : "text-red-500"}`}>
                 {item.change > 0 ? `+${item.change}` : item.change}
               </span>
-              <span className="text-zinc-400 text-xs font-semibold"> vs yesterday</span>
+              <span className="text-zinc-400 text-xs font-semibold"> vs kemarin</span>
             </div>
           </div>
         ))}

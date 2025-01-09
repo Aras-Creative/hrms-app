@@ -2,13 +2,15 @@ import React, { useState } from "react";
 import DashboardLayouts from "../../../../layouts/DashboardLayouts";
 import { NavLink, useParams } from "react-router-dom";
 import {
+  IconAlertCircle,
+  IconAlertCircleFilled,
   IconArrowLeft,
+  IconCircleOff,
   IconContract,
   IconDotsVertical,
   IconFile,
   IconGridScan,
   IconMail,
-  IconReceipt2,
   IconStopwatch,
   IconUserCircle,
 } from "@tabler/icons-react";
@@ -16,18 +18,24 @@ import useFetch from "../../../../hooks/useFetch";
 import PersonalInformation from "./PersonalInformation";
 import ContractDetails from "./ContractDetails";
 import TimeManagement from "./TimeManagement";
+import { STORAGE_URL } from "../../../../config";
+import { Loading } from "../../../../components/Preloaders";
+import { InternalServerError } from "../../../../components/Errors";
+import { toTitleCase } from "../../../../utils/toTitleCase";
 
 const TABS = [
-  { name: "personalInformation", label: "Personal Information", icon: IconUserCircle, component: PersonalInformation },
-  { name: "contract", label: "Contract", icon: IconContract, component: ContractDetails },
-  { name: "timeManagement", label: "Time Management", icon: IconStopwatch, component: TimeManagement },
+  { name: "personalInformation", label: "Informasi Personal", icon: IconUserCircle, component: PersonalInformation },
+  { name: "contract", label: "Informasi Kontrak", icon: IconContract, component: ContractDetails },
+  { name: "timeManagement", label: "Manajemen Waktu", icon: IconStopwatch, component: TimeManagement },
   { name: "documents", label: "Documents", icon: IconFile },
 ];
 
 const EmployeeDetails = () => {
   const { employeeId } = useParams();
   const [activeTab, setActiveTab] = useState("personalInformation");
+  const [actions, setActions] = useState(false);
 
+  // Fetch employee data
   const {
     responseData: employeeData,
     loading: employeeDataLoading,
@@ -35,10 +43,7 @@ const EmployeeDetails = () => {
     error: employeeDataError,
   } = useFetch(`/employee/${employeeId}/details`);
 
-  const profileImage =
-    employeeData?.document?.[1]?.documentName &&
-    `http://localhost:3000/storage/document/${employeeData?.employeeId}/${employeeData?.document[0]?.documentName}`;
-
+  const profileImage = employeeData?.profilePicture && `${STORAGE_URL}/document/${employeeId}/${employeeData.profilePicture.path}`;
   const renderTabContent = () => {
     const activeTabData = TABS.find((tab) => tab.name === activeTab);
     if (activeTabData?.component) {
@@ -56,7 +61,13 @@ const EmployeeDetails = () => {
             <IconArrowLeft />
           </NavLink>
           <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center font-bold text-slate-800 text-sm">
-            {employeeData?.fullName?.[0]?.toUpperCase() || "?"}
+            {profileImage ? (
+              <img src={profileImage} alt="Profile Image" className="w-12 h-12 rounded-full object-cover" />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center font-bold text-slate-800 text-sm">
+                {employeeData?.fullName?.[0]?.toUpperCase() || "?"}
+              </div>
+            )}
           </div>
           <div className="flex flex-col">
             {employeeDataLoading ? (
@@ -69,19 +80,50 @@ const EmployeeDetails = () => {
                 <IconGridScan size={20} />
                 <h1 className="text-slate-800 text-xs font-semibold">{employeeData?.employeeId}</h1>
               </div>
-              <span className="bg-green-100 text-xs text-green-600 px-2 py-0.5 inline-flex items-center rounded-xl">
-                <span className="bg-green-600 w-1.5 h-1.5 rounded-full" /> Active
+              <span
+                className={`${
+                  employeeData?.status === "aktif" ? "bg-green-100 text-green-600" : "bg-red-100 text-red-500 "
+                } text-xs gap-2  px-2 py-0.5 inline-flex items-center rounded-xl`}
+              >
+                <span className={`${employeeData?.status === "aktif" ? "bg-green-600" : "bg-red-500"} w-1.5 h-1.5 rounded-full`} />{" "}
+                {toTitleCase(employeeData?.status)}
               </span>
             </div>
           </div>
         </div>
         <div className="flex gap-4 items-center">
-          <button type="button" className="bg-white rounded-lg p-2 border border-zinc-400 hover:bg-zinc-100 transition-all">
-            <IconDotsVertical />
-          </button>
-          <button type="button" className="bg-green-700 flex gap-2 px-3 py-2 rounded-lg items-center text-white hover:bg-green-800 transition-all">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setActions((prev) => !prev)}
+              className="bg-white rounded-lg p-2 border border-zinc-400 hover:bg-zinc-100 transition-all"
+            >
+              <IconDotsVertical />
+            </button>
+
+            {actions && (
+              <div className="bg-white absolute top-12 right-0 whitespace-nowrap rounded-xl shadow-md px-3 py-2 border border-zinc-300">
+                <div className="flex flex-col gap-2">
+                  <button className="bg-white flex items-center gap-2 hover:bg-zinc-100 transition-all py-2 px-3 rounded-t-lg">
+                    <IconAlertCircleFilled className="text-yellow-500" />
+                    <span className="text-sm text-slate-800">Berikan Peringatan</span>
+                  </button>
+
+                  <button className="bg-white flex items-center gap-2 hover:bg-zinc-100 transition-all py-2 px-3 rounded-b-lg">
+                    <IconCircleOff className="text-red-500" />
+                    <span className="text-sm text-slate-800">Nonaktifkan</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          <NavLink
+            to={`mailto:${employeeData?.email}`}
+            type="button"
+            className="bg-green-700 flex gap-2 px-3 py-2 rounded-lg items-center text-white hover:bg-green-800 transition-all"
+          >
             <IconMail /> Send Email
-          </button>
+          </NavLink>
         </div>
       </header>
 
@@ -100,7 +142,9 @@ const EmployeeDetails = () => {
         ))}
       </nav>
 
-      <main className="py-8 flex items-start gap-4 h-full">{renderTabContent()}</main>
+      <main className="py-8 flex items-start gap-4 w-full h-full">
+        {employeeDataLoading ? <Loading /> : employeeDataError?.status === 500 ? <InternalServerError /> : renderTabContent()}
+      </main>
     </DashboardLayouts>
   );
 };

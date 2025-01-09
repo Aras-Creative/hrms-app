@@ -16,15 +16,15 @@ import { useParams } from "react-router-dom";
 import useFetch from "../../../../hooks/useFetch";
 import Modal from "../../../../components/Modal";
 import Datepicker from "../../../../components/Datepicker";
-import { employementStatusOptions, fetchDepartment, fetchJobRoles, LabelEmployementStatus } from "../../../../utils/SelectOptions";
+import { employementStatusOptions, fetchJobRoles, LabelEmployementStatus } from "../../../../utils/SelectOptions";
 import Toast from "../../../../components/Toast";
+import { formatDate, handleDatePick } from "../../../../utils/dateUtils";
+import { formatCurrency } from "../../../../utils/formatCurrency";
 
 const filterReducer = (state, action) => {
   switch (action.type) {
     case "SET_JOB_ROLE_OPTIONS":
       return { ...state, jobRoleOptions: action.payload };
-    case "SET_DEPARTMENT_OPTIONS":
-      return { ...state, departmentOptions: action.payload };
     default:
       return state;
   }
@@ -33,16 +33,17 @@ const filterReducer = (state, action) => {
 const ContractDetails = ({ data }) => {
   const { employeeId } = useParams();
   const [state, dispatch] = useReducer(filterReducer, { jobRoleOptions: [], departmentOptions: [] });
-  const { updateData, loading, error } = useFetch(`/employee/contract/${employeeId}/update`, { method: "POST" });
+  const { updateData } = useFetch(`/employee/contract/${employeeId}/update`, { method: "POST" });
   const [toast, setToast] = useState({ text: "", type: "" });
   const [modalOpen, setModalOpen] = useState({ type: "" });
   const { updateData: extendContract } = useFetch(`/employee/contract/${employeeId}/extends`, { method: "PUT" });
+  const { deleteData: terminateContract } = useFetch(`/employee/contract/${employeeId}/terminate`, { method: "DELETE" });
+
   const [isEditing, setIsEditing] = useState({ contract: false, benefits: false, workingScopes: false });
 
   const initialFormData = useMemo(
     () => ({
       contract: {
-        department: { name: data?.jobRole?.department?.departmentName, id: data?.jobRole?.department?.departmentId },
         jobRole: { title: data?.jobRole?.jobRoleTitle, id: data?.jobRole?.jobRoleId },
         employementType: data?.contract?.employementStatus,
         startDate: data?.contract?.startDate,
@@ -61,18 +62,8 @@ const ContractDetails = ({ data }) => {
   const [formData, setFormData] = useState(initialFormData);
 
   useEffect(() => {
-    if (data) setFormData(initialFormData);
-  }, [data, initialFormData]);
-
-  useEffect(() => {
-    fetchDepartment(true, dispatch);
+    fetchJobRoles(true, dispatch);
   }, []);
-
-  useEffect(() => {
-    if (formData.contract.department.id) {
-      fetchJobRoles(true, dispatch, formData.contract.department.id);
-    }
-  }, [formData.contract.department.id]);
 
   const toggleEdit = async (e, formName) => {
     const isEditingNow = isEditing[formName];
@@ -118,19 +109,9 @@ const ContractDetails = ({ data }) => {
 
   const contractProgressBarWidth = useMemo(() => `${calculateProgress(data?.contract?.startDate, data?.contract?.endDate).toFixed(2)}%`, [data]);
 
-  const formatDate = (date) => new Date(date)?.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
-
-  const formatToRupiah = (number) => {
-    if (!number) return "Rp 0";
-    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(number);
-  };
-
   const handleModalOpen = (type) => setModalOpen({ type });
 
-  const handleDatePick = (selectedDate, field) => {
-    const dateOnly = new Date(selectedDate).toLocaleDateString("en-CA");
-    setFormData((prev) => ({ ...prev, contract: { ...prev.contract, [field]: dateOnly } }));
-  };
+  const handleContractDatePick = handleDatePick(setFormData)("contract");
 
   const updateWorkingScopes = (index, value) => {
     setFormData((prev) => {
@@ -150,14 +131,23 @@ const ContractDetails = ({ data }) => {
 
   const addWorkingScope = () => updateWorkingScopes(formData.workingScopes.length, { title: "" });
 
+  const handleTerminateContract = async () => {
+    const { success, error } = await terminateContract();
+    if (success) {
+      setToast({ text: data.message, type: "success" });
+    } else {
+      setToast({ text: error || "An error occurred", type: "error" });
+    }
+  };
+
   return (
-    <>
+    <div className="flex flex-grow gap-4 w-full h-full">
       <div className="flex flex-col gap-4 w-2/3 h-full">
         <div className="bg-white rounded-lg w-full h-full border border-zinc-300 pt-6 pb-6 shadow relative overflow-hidden">
           <div className="flex w-full justify-between px-8 ">
             <div className="flex gap-3 items-center text-zinc-500">
               <IconClipboard />
-              <h1 className="text-slate-800 text-lg font-bold">Contract Duration</h1>
+              <h1 className="text-slate-800 text-lg font-bold">Durasi Kontrak</h1>
             </div>
             <div className="flex gap-2 items-center">
               <button
@@ -165,14 +155,14 @@ const ContractDetails = ({ data }) => {
                 onClick={() => handleModalOpen("terminateContract")}
                 className="bg-white px-3 flex items-center gap-3 py-2 rounded-xl border border-zinc-400 hover:bg-zinc-100 ease-in-out transition-all duration-300"
               >
-                <h1 className="text-slate-800 font-bold text-xs">Terminate</h1>
+                <h1 className="text-slate-800 font-bold text-xs">Akhiri Kontrak</h1>
               </button>
               <button
                 type="button"
                 onClick={() => handleModalOpen("extendContract")}
                 className="bg-slate-800 px-3 flex items-center gap-3 py-2 rounded-xl hover:bg-slate-900 ease-in-out transition-all duration-300"
               >
-                <h1 className="text-white font-bold text-xs">Extend Contract</h1>
+                <h1 className="text-white font-bold text-xs">Perpanjang Kontrak</h1>
               </button>
             </div>
           </div>
@@ -180,7 +170,7 @@ const ContractDetails = ({ data }) => {
             <div className="mt-6 w-1/3 flex items-center gap-6 pb-4">
               <div className="flex flex-col gap-2">
                 <label htmlFor="startDate" className="text-zinc-500 text-sm">
-                  Contract Start
+                  Tanggal Mulai
                 </label>
                 <input type="text" value={formatDate(formData.contract.startDate)} className="outline-none text-sm hover:border-zinc-500" readOnly />
               </div>
@@ -189,14 +179,14 @@ const ContractDetails = ({ data }) => {
               </div>
               <div className="flex flex-col gap-2">
                 <label htmlFor="endDate" className="text-zinc-500 text-sm">
-                  Contract End
+                  Tanggal Berakhir
                 </label>
                 <input type="text" value={formatDate(formData.contract.endDate)} className="outline-none text-sm hover:border-zinc-500" readOnly />
               </div>
             </div>
             <div className={`flex items-center gap-2 px-6 ${calculateDaysLeft(formData.contract.endDate) < 30 ? "text-red-400" : "text-slate-800"}`}>
               <IconHourglassHigh />
-              <p className="font-semibold text-sm">{calculateDaysLeft(formData.contract.endDate)} Days until expired</p>
+              <p className="font-semibold text-sm">{calculateDaysLeft(formData.contract.endDate)} Hari hingga berakhir</p>
             </div>
           </div>
           <div className="absolute bottom-0 left-0 w-full h-1.5 bg-gray-200 rounded">
@@ -208,7 +198,7 @@ const ContractDetails = ({ data }) => {
         </div>
 
         <Card
-          title="Contract Position Details"
+          title="Detail Kontrak"
           icon={<IconClipboardText />}
           isEditable={true}
           onCancel={() => handleCancelEdit("contract")}
@@ -218,30 +208,19 @@ const ContractDetails = ({ data }) => {
           <div className="grid grid-cols-2 gap-6 mt-6">
             <FormInput
               type="select"
-              label="Department"
-              value={{
-                label: formData.contract.department.name || "Not Assigned",
-                value: formData.contract.department.id || "Not Assigned",
-              }}
-              onEdit={isEditing.contract}
-              onChange={handleSelectChange("contract", "department")}
-              options={state.departmentOptions}
-            />
-            <FormInput
-              type="select"
               label="Job Role"
               value={{
                 label: formData.contract.jobRole.title || "Not Assigned",
                 value: formData.contract.jobRole.id || "Not Assigned",
               }}
               options={state.jobRoleOptions}
-              onEdit={formData.contract.department.id !== undefined}
+              onEdit={isEditing.contract}
               onChange={handleSelectChange("contract", "jobRole")}
             />
-            <FormInput type="text" label="Supervisor" value={formData.contract.jobRole.title || "Not Assigned"} readOnly />
+
             <FormInput
               type="select"
-              label="Employement Type"
+              label="Tipe Karyawan"
               value={{
                 label: <LabelEmployementStatus label={formData.contract.employementType} /> || "Not Assigned",
                 value: formData.contract.employementType,
@@ -253,9 +232,9 @@ const ContractDetails = ({ data }) => {
           </div>
         </Card>
 
-        <Card title="Compensation and Benefits" icon={<IconClipboardText />} isEditable={false}>
+        <Card title="Kompensasi dan Benefits" icon={<IconClipboardText />} isEditable={false}>
           <div className="grid grid-cols-2 gap-6 mt-6">
-            <FormInput type="text" label="Basic Salary" value={formatToRupiah(formData.benefits.basicSalary)} readOnly />
+            <FormInput type="text" label="Gaji Pokok" value={formatCurrency(formData.benefits.basicSalary)} onEdit={false} />
             {formData.benefits.adjustments
               ?.filter((item) => item.type === "allowance")
               .map((item, index) => (
@@ -263,12 +242,12 @@ const ContractDetails = ({ data }) => {
                   key={index}
                   type="text"
                   label={item.name}
-                  value={item.amountType === "fixed" ? formatToRupiah(item.amount) : `${item.amount}%`}
-                  readOnly
+                  value={item.amountType === "fixed" ? formatCurrency(item.amount) : `${item.amount}%`}
+                  onEdit={false}
                 />
               ))}
             {formData.benefits.assets?.map((item, index) => (
-              <FormInput key={index} type="text" label="Asset" value={item.name} readOnly />
+              <FormInput key={index} type="text" label="Asset" value={item.assetName} onEdit={false} />
             ))}
           </div>
         </Card>
@@ -276,7 +255,7 @@ const ContractDetails = ({ data }) => {
 
       <div className="flex flex-col gap-4 w-1/3 h-full flex-grow">
         <Card
-          title="Working Scope"
+          title="Ruang Lingkup Kerja"
           icon={<IconClipboardText />}
           isEditable={true}
           toggleEdit={(e) => toggleEdit(e, "workingScopes")}
@@ -319,12 +298,20 @@ const ContractDetails = ({ data }) => {
                   </div>
                 </div>
               ))
+            ) : isEditing.workingScopes ? (
+              <button
+                onClick={addWorkingScope}
+                type="button"
+                className="mt-1 border flex-shrink-0 flex items-center justify-center hover:bg-zinc-50 rounded-full h-8 w-8"
+              >
+                <IconPlus size={18} />
+              </button>
             ) : (
-              <span>Not Provided</span>
+              <p className="text-gray-500 text-sm">Belum ditugaskan</p>
             )}
           </div>
         </Card>
-        {toast.text && <Toast text={toast.text} type={toast.type || "error"} />}
+        {toast.text && <Toast text={toast.text} type={toast.type || "error"} onClick={() => setToast({ text: "", type: "" })} />}
       </div>
 
       {modalOpen.type === "terminateContract" && (
@@ -333,20 +320,24 @@ const ContractDetails = ({ data }) => {
             <div className="w-full flex flex-col items-center p-9 mt-8">
               <IconAlertTriangleFilled className="text-red-500" size={100} />
               <div className="flex flex-col items-center mt-4">
-                <h1 className="text-2xl font-semibold">Are You Sure?</h1>
-                <p className="text-center text-gray-600 mt-2">
-                  You are about to terminate the contract for this employee. This action cannot be undone.
-                </p>
-                <p className="text-center text-gray-600">Please confirm if you want to proceed with terminating the contract.</p>
+                <h1 className="text-2xl font-semibold">Apakah Kamu Yakin?</h1>
+                <p className="text-center text-gray-600 mt-2">Anda akan mengakhiri kontrak karyawan ini. Tindakan ini tidak dapat dibatalkan.</p>
+                <p className="text-center text-gray-600">Harap konfirmasi jika Anda ingin melanjutkan dengan pemutusan kontrak.</p>
               </div>
               <div className="flex justify-center w-full mt-8 gap-4 mb-8">
-                <button className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-all duration-300 ease-linear">Confirm</button>
+                <button
+                  type="button"
+                  onClick={handleTerminateContract}
+                  className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-all duration-300 ease-linear"
+                >
+                  Konfirmasi
+                </button>
                 <button
                   type="button"
                   onClick={() => setModalOpen({ type: "" })}
                   className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-all duration-300 ease-linear"
                 >
-                  Cancel
+                  Batal
                 </button>
               </div>
             </div>
@@ -356,34 +347,40 @@ const ContractDetails = ({ data }) => {
 
       {modalOpen.type === "extendContract" && (
         <Modal width={"1/3"} isOpen={modalOpen}>
-          <Modal.Header>Extend Contract Options</Modal.Header>
+          <Modal.Header>Opsi Perpanjangan Kontrak</Modal.Header>
           <Modal.Body>
             <div className="w-full flex flex-col items-center p-4">
               <div className="grid grid-cols-2 gap-4 w-full">
                 <div className="w-full">
-                  <h1 className="mb-2 text-sm">Start Date</h1>
+                  <h1 className="mb-2 text-sm">Tanggal Mulai</h1>
                   <div className="bg-white border rounded-lg border-zinc-400">
-                    <Datepicker defaultDate={formData.contract.startDate} onChange={(date) => handleDatePick(date, "startDate")} />
+                    <Datepicker
+                      position={"top-30"}
+                      label={"Select Start Date"}
+                      defaultDate={formData.contract.startDate || undefined}
+                      onChange={(date) => handleContractDatePick("startDate")(date)}
+                    />
                   </div>
                 </div>
                 <div className="w-full">
-                  <h1 className="mb-2 text-sm">End Date</h1>
+                  <h1 className="mb-2 text-sm">Tanggal Berakhir</h1>
                   <div className="bg-white border rounded-lg border-zinc-400">
-                    <Datepicker defaultDate={formData.contract.endDate} onChange={(date) => handleDatePick(date, "endDate")} />
+                    <Datepicker
+                      defaultDate={formData.contract.endDate}
+                      position={""}
+                      label={"Select Start Date"}
+                      onChange={(date) => handleContractDatePick("endDate")(date)}
+                    />
                   </div>
                 </div>
-                <FormInput
-                  type="select"
-                  label="Department"
-                  options={state.departmentOptions}
-                  onChange={handleSelectChange("contract", "department")}
-                />
+              </div>
+              <div className="mt-4 w-full">
                 <FormInput
                   type="select"
                   label="Job Role"
+                  value={{ label: formData?.contract?.jobRole?.title, value: formData?.contract?.jobRole?.id }}
                   options={state.jobRoleOptions}
                   onChange={handleSelectChange("contract", "jobRole")}
-                  onEdit={formData.contract.department.id !== undefined}
                 />
               </div>
             </div>
@@ -393,22 +390,22 @@ const ContractDetails = ({ data }) => {
               <button
                 type="button"
                 onClick={handleExtendContract}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-all duration-300 ease-linear"
+                className="px-4 py-2 bg-emerald-700 text-white rounded hover:bg-emerald-600 transition-all duration-300 ease-linear"
               >
-                Confirm
+                Konfirmasi
               </button>
               <button
                 type="button"
                 onClick={() => setModalOpen({ type: "" })}
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-all duration-300 ease-linear"
               >
-                Cancel
+                Batal
               </button>
             </div>
           </Modal.Footer>
         </Modal>
       )}
-    </>
+    </div>
   );
 };
 

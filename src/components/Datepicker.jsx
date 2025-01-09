@@ -2,14 +2,14 @@ import { IconArrowLeft, IconArrowRight } from "@tabler/icons-react";
 import React, { useState } from "react";
 import DatePicker from "tailwind-datepicker-react";
 
-const Datepicker = ({ onChange, defaultDate, isDisabled }) => {
+const Datepicker = ({ onChange, defaultDate, isDisabled, label, position }) => {
   const [show, setShow] = useState(false);
 
   const handleClose = (state) => {
     setShow(state);
   };
   const DatepickerOptions = {
-    title: "Select Birth Date",
+    title: label,
     autoHide: true,
     todayBtn: false,
     clearBtn: true,
@@ -35,7 +35,7 @@ const Datepicker = ({ onChange, defaultDate, isDisabled }) => {
       prev: () => <IconArrowLeft />,
       next: () => <IconArrowRight />,
     },
-    datepickerClassNames: "top-30",
+    datepickerClassNames: position,
     language: "en-GB",
     disabledDates: [],
     weekDays: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],

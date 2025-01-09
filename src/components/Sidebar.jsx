@@ -1,5 +1,5 @@
 import {
-  IconBuilding,
+  IconBriefcase,
   IconCalendar,
   IconCurrencyDollar,
   IconFile,
@@ -19,14 +19,14 @@ const linkGroups = [
       { to: "/", icon: <IconMenu2 /> },
       { to: "/dashboard", icon: <IconHome /> },
       { to: "/dashboard/calendar", icon: <IconCalendar /> },
-      { to: "/dashboard/dayoff", icon: <IconMailOpened /> },
+      { to: "/dashboard/leaves", icon: <IconMailOpened /> },
     ],
     borderClass: "border-b border-zinc-300",
   },
   {
     links: [
       { to: "/dashboard/employee", icon: <IconUserCircle /> },
-      { to: "/dashboard/department", icon: <IconBuilding /> },
+      { to: "/dashboard/jobrole", icon: <IconBriefcase /> },
       { to: "/dashboard/document", icon: <IconFile /> },
       { to: "/dashboard/payroll", icon: <IconCurrencyDollar /> },
     ],

@@ -3,30 +3,31 @@ import useFetch from "../../../hooks/useFetch";
 import {
   IconAddressBook,
   IconBriefcase,
-  IconChevronDown,
   IconDots,
   IconDownload,
-  IconFilter,
   IconGenderBigender,
-  IconGenderFemale,
-  IconGenderMale,
   IconGraph,
   IconGridScan,
-  IconLayoutGridRemove,
-  IconListDetails,
   IconPhone,
   IconPlus,
-  IconSearch,
   IconUser,
 } from "@tabler/icons-react";
 import Table from "../../../components/Table";
 import DashboardLayouts from "../../../layouts/DashboardLayouts";
 import { NavLink } from "react-router-dom";
-import FormInput from "../../../components/FormInput";
-import axiosInstance from "../../../utils/axiosInstance";
 import useDebounce from "../../../hooks/useDebounce";
 import Grid from "../../../components/Grid";
-import { fetchJobRoles, genderFilterOptions } from "../../../utils/SelectOptions";
+import { fetchJobRoles } from "../../../utils/SelectOptions";
+import SearchInput from "../../../components/SearchInput";
+import FilterDropdown from "../../../components/FilterDropdown";
+import TableViewButtons from "../../../components/TableViewButton";
+import { STORAGE_URL } from "../../../config";
+import { toTitleCase } from "../../../utils/toTitleCase";
+import { InternalServerError, NotFound } from "../../../components/Errors";
+import { Loading } from "../../../components/Preloaders";
+import FormInput from "../../../components/FormInput";
+import Pagination from "../../../components/Pagination";
+import { handleDownloadFile } from "../../../utils/handleDownloadFile";
 
 // Initial state for the reducer
 const initialState = {
@@ -54,6 +55,8 @@ const reducer = (state, action) => {
       return { ...state, currentPage: action.payload };
     case "SET_TOTAL_PAGES":
       return { ...state, totalPages: action.payload };
+    case "SET_PAGE_SIZE":
+      return { ...state, pageSize: action.payload };
     case "SET_TABLE_VIEW":
       return { ...state, tableView: action.payload };
     case "TOGGLE_FILTER":
@@ -109,6 +112,9 @@ const Employee = () => {
   }, [debouncedSearchQuery]);
 
   useEffect(() => {
+    employeeDataRefetch();
+  }, [pageSize, currentPage]);
+  useEffect(() => {
     if (employeeDataPages) {
       dispatch({ type: "SET_TOTAL_PAGES", payload: employeeDataPages });
     }
@@ -121,20 +127,12 @@ const Employee = () => {
   const employeeColumns = useMemo(
     () => [
       {
-        key: "employeeId",
-        label: "ID",
-        icon: <IconGridScan size={20} />,
-      },
-      {
         key: "fullName",
-        label: "Employee Name",
+        label: "Nama Lengkap Karyawan",
         icon: <IconUser size={20} />,
         render: (value, rowData) => {
           if (!rowData) return <span>Loading...</span>;
-
-          const profileImage =
-            rowData.document?.[0]?.documentName && `http://localhost:3000/storage/document/${rowData.employeeId}/${rowData.document[0].documentName}`;
-
+          const profileImage = rowData.profilePicture && `${STORAGE_URL}/document/${rowData.userId}/${rowData.profilePicture.path}`;
           return (
             <div className="flex items-center gap-3">
               {profileImage ? (
@@ -146,31 +144,59 @@ const Employee = () => {
               )}
               <div className="flex flex-col">
                 <span className="font-bold 2xl:w-full sm:w-24 lg:w-48 truncate">{value}</span>
-                <p className="text-xs text-slate-800 font-normal">{rowData?.email}</p>
+                <p className="text-xs text-slate-800 font-normal">{rowData?.employeeId}</p>
               </div>
             </div>
           );
         },
       },
-      { key: "gender", label: "Gender", icon: <IconGenderBigender size={20} /> },
+      { key: "gender", label: "Jenis Kelamin", icon: <IconGenderBigender size={20} /> },
       { key: "jobRole", label: "Job Role", icon: <IconBriefcase size={20} />, render: (value) => value?.jobRoleTitle },
-      { key: "status", label: "Status", icon: <IconGraph size={20} />, render: () => "Active" },
       {
-        key: "phoneNumber",
-        label: "Contact Information",
-        icon: <IconAddressBook size={20} />,
+        key: "status",
+        label: "Status",
+        icon: <IconGraph size={20} />,
         render: (value) => (
-          <span className="text-blue-500 px-2 py-1 rounded-full border text-xs border-blue-500 inline-flex gap-1 items-center">
-            <IconPhone size={16} /> {value}
-          </span>
+          <div
+            className={`${
+              value === "aktif"
+                ? "bg-green-100 text-emerald-700 border-emerald-700"
+                : value === "nonaktif" || "peringatan"
+                ? "bg-red-100 text-red-500 border-red-500"
+                : "bg-yellow-100 text-yellow-500 border-yellow-500"
+            } inline-flex rounded-full border px-2 py-1`}
+          >
+            {toTitleCase(value)}
+          </div>
         ),
       },
       {
-        key: "actions",
+        key: "phoneNumber",
+        label: "Informasi Kontak",
+        icon: <IconAddressBook size={20} />,
+        render: (value, rowData) => (
+          <div className="flex flex-col gap-2">
+            {value && (
+              <span className="text-blue-500 px-2 py-1 rounded-full border text-xs border-blue-500 inline-flex gap-1 items-center">
+                <IconPhone size={16} /> {value}
+              </span>
+            )}
+            {rowData?.emergencyContact && (
+              <span className="text-blue-500 px-2 py-1 rounded-full border text-xs border-blue-500 inline-flex gap-1 items-center">
+                <IconPhone size={16} /> {rowData?.emergencyContact}
+              </span>
+            )}
+            {!value && !rowData?.emergencyContact && <span className="text-gray-500 text-sm">-</span>}
+          </div>
+        ),
+      },
+
+      {
+        key: "userId",
         label: "Action",
         icon: "",
         render: (value, rowData) => (
-          <NavLink to={`/dashboard/employee/${rowData?.user.userId}/details`}>
+          <NavLink to={`/dashboard/employee/${value}/details`}>
             <IconDots />
           </NavLink>
         ),
@@ -183,14 +209,17 @@ const Employee = () => {
     dispatch({ type: "SET_TABLE_VIEW", payload: view });
   };
 
+  const handlePageChange = (page) => dispatch({ type: "SET_PAGE", payload: page });
+
   return (
     <DashboardLayouts>
       <div className="px-6 py-3">
+        {/* Header Section */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-12">
             <div>
-              <h1 className="text-2xl font-extrabold text-gray-800">Employees</h1>
-              <p className="text-gray-600 text-sm">Manage your company's employee data and roles.</p>
+              <h1 className="text-2xl font-extrabold text-gray-800">Data Karyawan</h1>
+              <p className="text-gray-600 text-sm">Kelola data dan peran karyawan perusahaan Anda.</p>
             </div>
             <div className="flex item-center gap-3">
               <NavLink
@@ -198,132 +227,53 @@ const Employee = () => {
                 className="bg-emerald-700 flex items-center gap-1 hover:bg-emerald-800 rounded-lg transition-all duration-300 ease-in-out px-3 py-2 text-white"
               >
                 <IconPlus size={20} />
-                <span className="text-sm text-white font-bold">Add New Employee</span>
+                <span className="text-sm text-white font-bold">Tambah Data Karyawan</span>
               </NavLink>
-              <div className="bg-white flex items-center gap-1 hover:bg-zinc-50 rounded-lg transition-all duration-300 ease-in-out px-3 py-2 border border-zinc-300">
+              <button
+                type="button"
+                onClick={() => handleDownloadFile("/document/download-employee", "employees-data.xlsx")}
+                className="bg-white flex items-center gap-1 hover:bg-zinc-50 rounded-lg transition-all duration-300 ease-in-out px-3 py-2 border border-zinc-300"
+              >
                 <IconDownload size={20} />
                 <span className=" text-sm text-zinc-600 font-bold">Download XLSX</span>
-              </div>
+              </button>
             </div>
           </div>
         </div>
         <div className="w-full flex justify-between items-center mb-5">
-          <div className="flex items-center bg-white border rounded-full w-1/3 p-2">
-            <IconSearch />
-            <input
-              type="text"
-              onChange={handleSearchChange}
-              value={searchQuery}
-              placeholder="Search employee name..."
-              className="ml-2 w-full bg-transparent border-none focus:outline-none text-sm text-gray-600"
-            />
-          </div>
+          {/* Search Input */}
+          <SearchInput searchQuery={searchQuery} handleSearchChange={handleSearchChange} />
+
+          {/* Filter Dropdown and Table View Buttons */}
           <div className="flex gap-3 items-center max-w-1/2 justify-end scrollbar-none">
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => dispatch({ type: "TOGGLE_FILTER" })}
-                className="bg-white border rounded-lg px-4 py-2 flex items-center gap-1"
-              >
-                <div className="pr-2">
-                  <div
-                    className={`h-5 w-5 items-center ${
-                      !filterParams.gender && !filterParams.jobRole.jobRoleId ? "hidden" : "flex"
-                    } justify-center text-xs text-white rounded-full bg-emerald-700`}
-                  />
-                </div>
-                <IconFilter size={16} />
-                Filter
-                <div className="pl-2">
-                  <IconChevronDown size={12} />
-                </div>
-              </button>
-              {filter && (
-                <div className="absolute flex items-start top-12 gap-1 w-64 right-0 flex-row-reverse">
-                  <div className="bg-white rounded-xl shadow w-full px-4 py-3">
-                    <div className="pb-1 flex justify-between items-center">
-                      <h1 className="text-sm font-semibold">Select Filter</h1>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          dispatch({
-                            type: "SET_FILTER_PARAMS",
-                            payload: {
-                              gender: "",
-                              jobRole: { jobRoleId: "", jobRoleTitle: "" },
-                            },
-                          });
-                          dispatch({ type: "TOGGLE_FILTER" });
-                        }}
-                        className="text-emerald-700 text-xs"
-                      >
-                        Clear Filter
-                      </button>
-                    </div>
-                    <FormInput
-                      type="select"
-                      options={genderFilterOptions}
-                      placeholder={"Filter by gender"}
-                      value={{
-                        label: (
-                          <div className="flex items-center gap-1">
-                            {filterParams.gender === "Male" ? (
-                              <IconGenderMale size={20} />
-                            ) : filterParams.gender === "Female" ? (
-                              <IconGenderFemale size={20} />
-                            ) : (
-                              "Select Gender"
-                            )}
-                            <span className="text-sm text-zinc-800">{filterParams.gender}</span>
-                          </div>
-                        ),
-                        value: filterParams.gender,
-                      }}
-                      onChange={(e) => dispatch({ type: "SET_FILTER_PARAMS", payload: { ...filterParams, gender: e.value } })}
-                    />
-                    <FormInput
-                      type="select"
-                      options={jobRoleOptions}
-                      placeholder={"Filter by job role"}
-                      value={
-                        filterParams.jobRole.jobRoleId ? { label: filterParams.jobRole.jobRoleTitle, value: filterParams.jobRole.jobRoleId } : null
-                      }
-                      onChange={(e) =>
-                        dispatch({ type: "SET_FILTER_PARAMS", payload: { ...filterParams, jobRole: { jobRoleId: e.value, jobRoleTitle: e.label } } })
-                      }
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="items-center flex gap-2 text-zinc-700">
-              <button
-                type="button"
-                onClick={() => handleTableViewChange("grid")}
-                className={`${
-                  tableView === "grid" ? "bg-zinc-200" : "bg-white"
-                } p-1 rounded border border-zinc-300 hover:bg-zinc-200 transition-all duration-300 ease-in-out`}
-              >
-                <IconLayoutGridRemove size={25} />
-              </button>
-              <button
-                type="button"
-                onClick={() => handleTableViewChange("list")}
-                className={`${
-                  tableView === "list" ? "bg-zinc-200" : "bg-white"
-                } p-1 rounded border border-zinc-300 hover:bg-zinc-200 transition-all duration-300 ease-in-out`}
-              >
-                <IconListDetails size={25} />
-              </button>
-            </div>
+            <FilterDropdown filter={filter} filterParams={filterParams} jobRoleOptions={jobRoleOptions} dispatch={dispatch} />
+            <FormInput
+              type="select"
+              options={[
+                { label: "10 Karyawan", value: 10 },
+                { label: "20 Karyawan", value: 20 },
+                { label: "50 Karyawan", value: 50 },
+                { label: "100 Karyawan", value: 100 },
+              ]}
+              value={{ label: `${pageSize} Karyawan`, value: pageSize }}
+              onChange={(e) => dispatch({ type: "SET_PAGE_SIZE", payload: e.value })}
+            />
+            <TableViewButtons tableView={tableView} handleTableViewChange={handleTableViewChange} />
           </div>
         </div>
+
+        {/* Table or Grid Display */}
         {employeeDataLoading ? (
-          <p>Loading...</p>
-        ) : employeeDataError ? (
-          <p className="text-red-500">Failed to load employee data.</p>
+          <Loading />
+        ) : employeeDataError?.status === 404 ? (
+          <NotFound />
+        ) : employeeDataError?.status === 500 ? (
+          <InternalServerError />
         ) : tableView === "list" ? (
-          <Table title="Employee Table" columns={employeeColumns} data={employeeData || []} />
+          <>
+            <Table title="Employee Table" columns={employeeColumns} data={employeeData || []} />
+            <Pagination totalPages={totalPages} currentPage={currentPage} handlePageChange={handlePageChange} />
+          </>
         ) : (
           <Grid data={employeeData} />
         )}

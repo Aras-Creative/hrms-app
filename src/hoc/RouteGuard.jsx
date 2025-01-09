@@ -1,53 +1,48 @@
 import { Navigate, Outlet } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
-import ProfileSetup from "../pages/onboarding/ProfileSetup";
-
-const isLoggedIn = (auth) => auth?.token && auth?.user;
-const hasProfile = (profile, profileError) => !profileError && profile;
-const hasRole = (auth, allowedRoles) => allowedRoles?.includes(auth?.user?.role);
+import { Loading } from "../components/Preloaders";
 
 const RouteGuard = ({ type, allowedRoles }) => {
   const { auth, profile, profileLoading, profileError } = useAuth();
 
+  // Handle loading state
   if (profileLoading) {
-    return <div>Loading...</div>; // Consistent loading state
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <Loading />
+      </div>
+    );
   }
 
+  // Check login status and profile availability
+  const isLoggedIn = !!auth?.token && !!auth?.user;
+  const hasProfile = profile && !profileError;
+  const hasRole = !allowedRoles || allowedRoles.includes(auth?.user?.role);
+
+  // Guard for 'guest' type
   if (type === "guest") {
-    if (isLoggedIn(auth)) {
-      const redirectPath = auth.user.role === "user" ? "/homepage" : "/dashboard";
-      return <Navigate to={redirectPath} />;
+    if (isLoggedIn) {
+      const redirectPath = auth?.user?.role === "user" ? "/homepage" : "/dashboard";
+      return <Navigate to={redirectPath} replace />;
     }
     return <Outlet />;
   }
 
-  if (type === "noProfile") {
-    if (!isLoggedIn(auth)) {
-      return <Navigate to="/auth/login" />;
-    }
-    if (auth?.user.role === "admin") {
-      return <Navigate to="/dashboard" />;
-    }
-    if (hasProfile(profile, profileError)) {
-      return <Navigate to="/homepage" />;
-    }
-    return <ProfileSetup />;
-  }
-
+  // Guard for 'private' type
   if (type === "private") {
-    if (!isLoggedIn(auth)) {
-      return <Navigate to="/auth/login" />;
+    if (!isLoggedIn) {
+      return <Navigate to="/auth/login" replace />;
     }
-    if (!hasProfile(profile, profileError) && auth?.user.role === "user") {
-      return <Navigate to="/welcome" />;
-    }
-    if (!hasRole(auth, allowedRoles)) {
-      return <Navigate to="/unauthorized" />;
+
+    if (!hasRole) {
+      return <Navigate to="/unauthorized" replace />;
     }
     return <Outlet />;
   }
 
-  return <Navigate to="/" />;
+  // Catch invalid `type`
+  console.error(`Invalid RouteGuard type: ${type}`);
+  return <Navigate to="/" replace />;
 };
 
 export default RouteGuard;

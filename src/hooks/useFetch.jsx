@@ -39,7 +39,7 @@ const useFetch = (endpoint, options = {}) => {
         setResponseData(response.data);
       }
     } catch (err) {
-      setError(err.response ? err.response.data.message : err.message);
+      setError(err.response ? { status: err.response.data.status, message: err.response.data.message } : { message: err.message });
     } finally {
       setLoading(false);
     }
@@ -74,7 +74,7 @@ const useFetch = (endpoint, options = {}) => {
       setResponseData(response.data);
       return { success: true, data: response.data };
     } catch (err) {
-      const errorMessage = err.response ? err.response.data.message : err.message;
+      const errorMessage = err.response ? err.response.data.message || err.response.data.details[0] : err.message;
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
@@ -90,6 +90,7 @@ const useFetch = (endpoint, options = {}) => {
       setResponseData(response.data);
       return { success: true, data: response.data };
     } catch (err) {
+      const errorMessage = err.response ? err.response.data.message || err.response.data.details[0] : err.message;
       setError(err.response ? err.response.data.message : err.message);
       return { success: false, error: errorMessage };
     } finally {
