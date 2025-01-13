@@ -39,10 +39,10 @@ const calculateStats = (data) => {
       case "Terlambat":
         stats.lateClockIn++;
         break;
-      case "Pulang Awak":
+      case "Pulang Awal":
         stats.earlyClockOut++;
         break;
-      case "Tidak Hadir":
+      case "Tidak Masuk":
         stats.absent++;
         break;
       default:

@@ -23,11 +23,9 @@ export const showDesktopNotification = (data) => {
       icon: "/image/aras-logo.webp",
     });
 
-    console.log(notification);
-
     notification.onclick = () => {
-      window.focus(); // Fokus pada tab aplikasi
-      notification.close(); // Tutup notifikasi
+      window.focus();
+      notification.close();
     };
   }
 };

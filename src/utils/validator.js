@@ -9,11 +9,8 @@ export const validateContractDetails = (data) =>
   });
 
 export const validateBenefits = (data) => {
-  const { assets, adjustment, bpjsKesehatanNumber, bpjsKetenagakerjaanNumber } = data;
+  const { assets, adjustment } = data;
   return (
-    bpjsKesehatanNumber.trim() !== "" &&
-    bpjsKetenagakerjaanNumber.trim() !== "" &&
-    assets.every((item) => item.assetName !== "" && item.assetName !== null) &&
-    adjustment.every((item) => item.amount !== "" && item.amount !== null)
+    assets.every((item) => item.assetName !== "" && item.assetName !== null) && adjustment.every((item) => item.amount !== "" && item.amount !== null)
   );
 };

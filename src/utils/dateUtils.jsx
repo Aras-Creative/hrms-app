@@ -67,4 +67,7 @@ export const handleDatePick = (setFormData) => (formName) => (field) => (selecte
   });
 };
 
-export const formatDate = (date) => new Date(date)?.toLocaleDateString("id-ID", { day: "numeric", weekday: "long", month: "long", year: "numeric" });
+export const formatDate = (date) => {
+  if (!date) return "-";
+  return new Date(date).toLocaleDateString("id-ID", { day: "numeric", weekday: "long", month: "long", year: "numeric" });
+};

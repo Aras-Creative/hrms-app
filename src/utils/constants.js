@@ -1,7 +1,7 @@
 export const createContractState = {
   personalData: {
     fullName: "",
-    NoKTP: "",
+    noktp: "",
     gender: "",
     religion: "",
     placeOfBirth: "",

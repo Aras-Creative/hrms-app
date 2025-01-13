@@ -13,6 +13,8 @@ import {
   IconPlus,
   IconClockPlay,
   IconHandClick,
+  IconLoader2,
+  IconForbid,
 } from "@tabler/icons-react";
 import { NavLink } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
@@ -23,10 +25,13 @@ import { formatDate, generateMonthSelection, getGreeting, getLastDayOfMonth, get
 import { useCurrentTime } from "../../hooks/useCurrentTime";
 import { getAttendanceStats, getProfilePicture } from "../../utils/userUtils";
 import FormInput from "../../components/FormInput";
+import FingerprintJS from "@fingerprintjs/fingerprintjs";
+import Forbidden from "../../assets/error/403.webp";
 
 const Homepage = () => {
   // Hooks
   const { profile } = useAuth();
+
   const currentTime = useCurrentTime(50000);
   const MonthSelection = generateMonthSelection();
 
@@ -82,13 +87,22 @@ const Homepage = () => {
     return cleanupSocket;
   }, [profile?.userId, AttendanceDataRefetch]);
 
-  const { submitData: recordAttendance, loading: recordAttendanceLoading } = useFetch(`/attendance/send/${profile?.userId}`);
+  const {
+    submitData: recordAttendance,
+    loading: recordAttendanceLoading,
+    error: recordAttendanceError,
+  } = useFetch(`/attendance/send/${profile?.userId}`, { method: "POST" });
 
   const handleRecordAttendance = useCallback(async () => {
+    const fp = await FingerprintJS.load();
+    const result = await fp.get();
+    const fingerprint = result.visitorId;
+
     const record = {
       date: new Date().toLocaleDateString("en-CA"),
-      time: currentTime.format("hh:mm:ss"),
+      time: currentTime.format("HH:mm:ss"),
       userId: profile.userId,
+      fingerprint,
     };
     const { success } = await recordAttendance(record);
     if (success) {
@@ -269,7 +283,10 @@ const Homepage = () => {
                   </div>
                   <button
                     onClick={handleAttendance}
-                    className="w-full bg-gradient-to-br from-indigo-600 to-indigo-500 text-white border border-zinc-200 px-5 flex justify-between items-center shadow py-3 mt-6 rounded-xl"
+                    disabled={todayAttendance?.clockOut}
+                    className={`w-full bg-gradient-to-br from-indigo-600 to-indigo-500 text-white border border-zinc-200 px-5 flex justify-between items-center shadow py-3 mt-6 rounded-xl ${
+                      todayAttendance?.clockOut ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
                   >
                     <div className="flex flex-col text-start">
                       <h1 className="text-lg font-semibold">
@@ -277,7 +294,7 @@ const Homepage = () => {
                           if (todayAttendance?.clockIn && !todayAttendance?.breakOut) {
                             return "Beristirahat";
                           } else if (todayAttendance?.breakOut && !todayAttendance?.breakIn) {
-                            return "Berhenti Istirahat";
+                            return "Selesai Istirahat";
                           } else if (todayAttendance?.breakIn && !todayAttendance?.clockOut) {
                             return "Pulang";
                           } else if ((todayAttendance?.clockIn, todayAttendance?.clockOut, todayAttendance?.breakIn, todayAttendance?.breakOut)) {
@@ -303,17 +320,34 @@ const Homepage = () => {
             <div className="fixed inset-0 bg-black bg-opacity-50 z-10"></div>
             <div className="fixed bottom-0 bg-white w-full h-96 z-20 animate-slideUp rounded-t-2xl px-5 py-5">
               <div className="flex items-center justify-center flex-col">
-                <button
-                  type="button"
-                  onClick={handleRecordAttendance}
-                  className="w-52 h-52 flex items-center justify-center bg-gradient-to-br from-indigo-500 to-indigo-400 border-4 border-zinc-100 shadow-md rounded-full"
-                >
-                  <IconHandClick size={90} stroke={0.5} className="text-white" />
-                </button>
-                <div className="mt-6 text-center">
-                  <h1 className="text-2xl font-bold text-zinc-600">{currentTime.format("HH:mm")}</h1>
-                  <p className="text-sm text-zinc-400">Waktu Sekarang</p>
-                </div>
+                {recordAttendanceError ? (
+                  <div className="text-center">
+                    <img src={Forbidden} className="w-48 mx-auto mt-4" alt="Attendance Error" />
+                    <p className="mt-4 text-xs text-red-600 font-semibold">
+                      Waduh! Sistem mendeteksi ada ketidaksesuaian pada absensi Anda. Silakan coba lagi atau hubungi admin jika membutuhkan bantuan.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleRecordAttendance}
+                      className="w-52 h-52 flex items-center justify-center bg-gradient-to-br from-indigo-500 to-indigo-400 border-4 border-zinc-100 shadow-md rounded-full"
+                      disabled={recordAttendanceLoading}
+                    >
+                      {recordAttendanceLoading ? (
+                        <IconLoader2 size={90} stroke={0.5} className="text-white animate-spin" />
+                      ) : (
+                        <IconHandClick size={90} stroke={0.5} className="text-white" />
+                      )}
+                    </button>
+                    <div className="mt-6 text-center">
+                      <h1 className="text-2xl font-bold text-zinc-600">{currentTime.format("HH:mm")}</h1>
+                      <p className="text-sm text-zinc-400">Waktu Sekarang</p>
+                    </div>
+                  </>
+                )}
+
                 <button
                   type="button"
                   onClick={() => setMarkAttendance(false)}
@@ -348,20 +382,3 @@ const AttendanceItem = ({ time, label, statusLabel, status, icon, statusClass, i
 );
 
 export default Homepage;
-
-{
-  /* <NavLink to={"/leave/request"}>
-              <div className="w-full transition-all duration-300 ease-in-out bg-white hover:bg-gradient-to-br hover:from-indigo-500 hover:to-indigo-400 group px-6 py-3 rounded-3xl border shadow">
-                <h1 className="group-hover:text-white text-sm font-bold text-slate-800 mb-1"> Feeling Overwhelmed?</h1>
-                <p className="group-hover:text-white text-xs text-zinc-500 leading-tight">
-                  Breaks clear your mind, boost energy, and come back stronger.
-                </p>
-
-                <div className="w-auto mt-2">
-                  <div className="group-hover:text-white text-indigo-500 hover:text-indigo-600 rounded-lg font-semibbold text-xs">
-                    Request Leave Now
-                  </div>
-                </div>
-              </div>
-            </NavLink> */
-}

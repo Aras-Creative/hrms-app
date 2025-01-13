@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import useFetch from "../hooks/useFetch";
 import { NavLink, useNavigate } from "react-router-dom";
 import { IconArrowLeft, IconEye, IconEyeOff } from "@tabler/icons-react";
@@ -6,9 +6,8 @@ import useAuth from "../hooks/useAuth";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [formData, setFormData] = useState({ identifier: "", password: "" });
   const { login } = useAuth();
-  const navigate = useNavigate();
 
   const { submitData: LoginPost, loading: LoginLoading, error: LoginError } = useFetch("/auth/login", { method: "POST" });
 
@@ -34,23 +33,23 @@ const Login = () => {
             </button>
             <img src="/image/sekantor-logo.png" className="w-24" alt="logo" />
           </div>
-          <h1 className="mb-2 text-lg font-bold text-zinc-700">Welcome back!👋</h1>
-          <h1 className="text-4xl text-start font-semibold">Signin to your account</h1>
-          <p className="text-sm text-zinc-600 mt-2">Let's signin to your account to getting started.</p>
+          <h1 className="mb-2 text-lg font-bold text-zinc-700">Selamat datang!👋</h1>
+          <h1 className="text-4xl text-start font-semibold">Login ke akun kamu dulu yuk!</h1>
+          <p className="text-sm text-zinc-600 mt-2">Ayo masuk ke akunmu untuk memulai.</p>
 
           <div className="mb-4 mt-6">
             <label htmlFor="InputEmailAdress" className="block text-sm px-2 mb-2">
-              Email Address
+              Email atau ID
             </label>
             <div className="flex items-center mt-1 rounded-full border border-gray-300 focus-within:border-indigo-500 p-3">
               <input
-                type="email"
-                placeholder="e.g., example@email.com"
+                type="text"
+                placeholder="Email atau ID Karyawan"
                 className="w-full outline-none"
                 id="InputEmailAdress"
                 name="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                value={formData.identifier}
+                onChange={(e) => setFormData({ ...formData, identifier: e.target.value })}
                 required
               />
             </div>
@@ -63,7 +62,7 @@ const Login = () => {
             <div className="flex items-center gap-3 rounded-full border border-gray-300 focus-within:border-indigo-500 p-3 mt-1">
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder="Password must be at least 8 characters long"
+                placeholder="Katasandi minimal 8 karakter"
                 className="w-full outline-none"
                 id="InputPassword"
                 name="password"
@@ -88,9 +87,9 @@ const Login = () => {
               {LoginLoading ? "Loading..." : "Login"}
             </button>
             <div className="w-full items-center gap-2 flex justify-center mt-3">
-              <p className="text-sm">Don't have an account?</p>
+              <p className="text-sm">Belum punya akun?</p>
               <NavLink to={"/auth/sigin"} className={"text-sm hover:underline text-indigo-500"}>
-                Register now
+                Hubungi Administrator
               </NavLink>
             </div>
           </div>

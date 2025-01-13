@@ -96,10 +96,7 @@ const ContractDetails = ({ data }) => {
     setFormData((prev) => {
       const updatedForm = { ...prev };
       if (formName === "contract") {
-        updatedForm[formName][field] =
-          field === "department"
-            ? { name: selectedOption.label, id: selectedOption.value, jobRole: { title: "", id: "" } }
-            : { title: selectedOption.label, id: selectedOption.value };
+        updatedForm[formName][field] = field === "jobrole" ? { title: selectedOption.label, id: selectedOption.value } : selectedOption.value;
       } else {
         updatedForm[formName][field] = selectedOption.value;
       }
@@ -132,13 +129,18 @@ const ContractDetails = ({ data }) => {
   const addWorkingScope = () => updateWorkingScopes(formData.workingScopes.length, { title: "" });
 
   const handleTerminateContract = async () => {
-    const { success, error } = await terminateContract();
+    const { success, error, data } = await terminateContract();
     if (success) {
       setToast({ text: data.message, type: "success" });
+      setModalOpen({ type: "" });
     } else {
       setToast({ text: error || "An error occurred", type: "error" });
     }
   };
+
+  useEffect(() => {
+    setTimeout(() => setToast({ type: "", message: "" }), 4000);
+  }, [toast.message]);
 
   return (
     <div className="flex flex-grow gap-4 w-full h-full">

@@ -1,6 +1,6 @@
 import axiosInstance from "./axiosInstance";
 
-export const handleDownloadFile = (path, fileName) => {
+export const handleDownloadFile = (path, fileName, handleError) => {
   axiosInstance
     .get(path, { method: "GET", responseType: "blob" })
     .then((response) => {
@@ -11,5 +11,7 @@ export const handleDownloadFile = (path, fileName) => {
       a.click();
       window.URL.revokeObjectURL(url);
     })
-    .catch((error) => console.error(error));
+    .catch((error) => {
+      handleError({ type: "error", message: "Gagal Mengunduh Laporan Kehadiran" });
+    });
 };

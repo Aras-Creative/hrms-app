@@ -21,7 +21,7 @@ const GeneralInformation = ({ handleFormInput, handleSelect, handleDatePick, dat
               value={data?.personalData?.fullName || ""}
               onChange={handleFormInput("personalData", "fullName")}
             />
-            <FormInput type="number" label={"No. KTP"} value={data?.personalData?.NoKTP || ""} onChange={handleFormInput("personalData", "NoKTP")} />
+            <FormInput type="number" label={"No. KTP"} value={data?.personalData?.noktp || ""} onChange={handleFormInput("personalData", "noktp")} />
           </div>
           <div className="grid grid-cols-2 gap-3 mb-3 w-full mt-3">
             <FormInput
@@ -48,7 +48,7 @@ const GeneralInformation = ({ handleFormInput, handleSelect, handleDatePick, dat
               <h1 className="text-slate-800 text-sm">Tanggal Lahir</h1>
               <div className="mt-2 py-0.5 border rounded-xl border-zinc-300 overflow-hidden bg-white">
                 <Datepicker
-                  position={"top-30"}
+                  position={"top-100"}
                   label={"Tanggal lahir"}
                   defaultDate={data?.personalData?.dateOfBirth || null}
                   onChange={(date) => handleDatePick("personalData")("dateOfBirth")(date)}

@@ -11,7 +11,7 @@ export const AuthProvider = ({ children }) => {
   });
   const [settingsPreference, setSettingsPreference] = useState(null);
   const [profile, setProfile] = useState(null);
-  const [isVerified, setIsVerified] = useState(false);
+  const [isProfileComplete, setIsProfileComplete] = useState(false);
 
   // Helper to check if the token is valid
   const isTokenValid = useCallback((token) => {
@@ -65,8 +65,8 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (profileData) {
-      setProfile(profileData);
-      setIsVerified(profileData?.documents?.some((doc) => doc?.documentName?.startsWith("KTPPhoto")));
+      setProfile(profileData.userProfile);
+      setIsProfileComplete(profileData.isComplete);
     }
   }, [profileData]);
 
@@ -109,7 +109,7 @@ export const AuthProvider = ({ children }) => {
         profileError,
         login,
         logout,
-        isVerified,
+        isProfileComplete,
         profileRefetch,
         settingsLoading,
         settingsError,

@@ -1,18 +1,16 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import DashboardLayouts from "../../layouts/DashboardLayouts";
 import {
   IconArrowLeft,
   IconArrowRight,
-  IconBriefcase2Filled,
+  IconBriefcase2,
   IconClipboardCheck,
   IconClipboardX,
-  IconClockFilled,
+  IconClock,
   IconDownload,
   IconFileImport,
-  IconFileTypeJpg,
-  IconGraphFilled,
-  IconLink,
-  IconUserFilled,
+  IconGraph,
+  IconUser,
 } from "@tabler/icons-react";
 import SummaryCard from "../../components/SummaryCard";
 import Table from "../../components/Table";
@@ -21,7 +19,6 @@ import { io } from "socket.io-client";
 import FormInput from "../../components/FormInput";
 import { BASE_API_URL, STORAGE_URL } from "../../config";
 import { attendanceFilter } from "../../utils/SelectOptions";
-import { NavLink } from "react-router-dom";
 import { mappedAttendanceData } from "../../utils/mappedSummaryData";
 import { calculateDuration, checkTime } from "../../utils/attendanceUtils";
 import { InternalServerError, NotFound } from "../../components/Errors";
@@ -29,13 +26,14 @@ import { Loading } from "../../components/Preloaders";
 import Pagination from "../../components/Pagination";
 import { handleDownloadFile } from "../../utils/handleDownloadFile";
 import { formatDate } from "../../utils/dateUtils";
+import Toast from "../../components/Toast";
 
 const Dashboard = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [totalPages, setTotalPages] = useState(null);
   const [filterStatus, setFilterStatus] = useState(null);
+  const [toast, setToast] = useState({ type: "", message: "" });
 
   const today = currentDate.toLocaleDateString("en-CA");
   const currentMonth = currentDate.toISOString().slice(0, 7);
@@ -49,64 +47,44 @@ const Dashboard = () => {
   } = useFetch(`/attendance?date=${today}&month=${currentMonth}&status=${filterStatus || ""}`, { currentPage, pageSize });
 
   const [attendances, setAttendances] = useState([]);
-  const prevDate = () => {
+
+  const handleDateChange = useCallback((change) => {
     setCurrentDate((prevDate) => {
       const newDate = new Date(prevDate);
-      newDate.setDate(prevDate.getDate() - 1);
+      newDate.setDate(prevDate.getDate() + change);
       return newDate;
     });
-  };
-
-  const nextDate = () => {
-    setCurrentDate((prevDate) => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const prevDateCopy = new Date(prevDate);
-      if (prevDateCopy.setHours(0, 0, 0, 0) === today.getTime()) {
-        return prevDateCopy;
-      }
-      prevDateCopy.setDate(prevDateCopy.getDate() + 1);
-      return prevDateCopy;
-    });
-  };
+  }, []);
 
   useEffect(() => {
     if (attendancesDataPages) {
-      setTotalPages(attendancesDataPages);
       setAttendances(attendancesData?.attendances || []);
     }
-  }, [attendancesDataPages, attendancesData]);
+  }, [attendancesData, attendancesDataPages]);
 
   useEffect(() => {
     attendancesDataRefetch();
   }, [filterStatus, currentPage, pageSize]);
 
   useEffect(() => {
-    const socket = io(`${BASE_API_URL}admin`, {
-      withCredentials: true,
-      transports: ["websocket", "polling"],
-    });
+    const socket = io(`${BASE_API_URL}admin`, { withCredentials: true, transports: ["websocket", "polling"] });
 
     socket.on("new_attendance", (data) => {
       setAttendances((prevAttendances) => {
         const existingIndex = prevAttendances.findIndex((att) => att.employeeId === data.attendance.employeeId);
         if (existingIndex !== -1) {
           const updatedAttendances = [...prevAttendances];
-          updatedAttendances[existingIndex] = {
-            ...updatedAttendances[existingIndex],
-            ...data.attendance,
-          };
+          updatedAttendances[existingIndex] = { ...updatedAttendances[existingIndex], ...data.attendance };
           return updatedAttendances;
         }
         return [data.attendance, ...prevAttendances];
       });
+
       attendancesDataRefetch();
     });
 
-    return () => {
-      socket.disconnect();
-    };
-  }, [attendancesDataRefetch]);
+    return () => socket.disconnect();
+  }, []);
 
   const { attendanceData, notPresentData } = mappedAttendanceData(attendancesData?.monthAttendance || {});
 
@@ -115,7 +93,7 @@ const Dashboard = () => {
       {
         key: "fullName",
         label: "Nama Karyawan",
-        icon: <IconUserFilled />,
+        icon: <IconUser />,
         render: (value, rowData) => {
           if (!rowData) return <span>Loading...</span>;
           const profileImage = rowData.profilePicture && `${STORAGE_URL}/document/${rowData.userId}/${rowData.profilePicture}`;
@@ -137,7 +115,7 @@ const Dashboard = () => {
         },
       },
       {
-        icon: <IconClockFilled />,
+        icon: <IconClock />,
         label: "Jam masuk & Jam pulang",
         render: (value, rowData) => (
           <div className="w-full flex items-center gap-3 whitespace-nowrap">
@@ -164,13 +142,13 @@ const Dashboard = () => {
       {
         key: "jobRole",
         label: "Job Role",
-        icon: <IconBriefcase2Filled />,
+        icon: <IconBriefcase2 />,
         render: (value) => value || "N/A",
       },
       {
         key: "status",
         label: "Status",
-        icon: <IconGraphFilled />,
+        icon: <IconGraph />,
         render: (value) => (
           <span
             className={`${
@@ -180,8 +158,10 @@ const Dashboard = () => {
                 ? "bg-teal-100 text-teal-600"
                 : value === "Cuti"
                 ? "bg-orange-100 text-orange-500"
-                : value === "Libur"
+                : value === "Hadir"
                 ? "bg-green-100 text-green-600"
+                : value === "Libur"
+                ? "bg-zinc-300 text-zinc-600"
                 : "bg-blue-100 text-blue-600"
             } whitespace-nowrap text-xs px-2 inline-flex py-0.5 gap-2 items-center rounded-xl`}
           >
@@ -195,6 +175,10 @@ const Dashboard = () => {
 
   const handlePageChange = (page) => setCurrentPage(page);
 
+  useEffect(() => {
+    setTimeout(() => setToast({ type: "", message: "" }), 4000);
+  }, [toast.message]);
+
   return (
     <DashboardLayouts>
       <div className="w-full mb-8 flex items-center justify-between">
@@ -203,12 +187,12 @@ const Dashboard = () => {
             <h1 className="text-3xl font-bold text-slate-800">Data Kehadiran</h1>
           </div>
           <div className="pl-4 flex items-center gap-4">
-            <button onClick={prevDate} className="bg-white p-1 text-xs text-slate-800 hover:bg-zinc-100 rounded-lg border">
+            <button onClick={() => handleDateChange(-1)} className="bg-white p-1 text-xs text-slate-800 hover:bg-zinc-100 rounded-lg border">
               <IconArrowLeft />
             </button>
             <h1 className="font-bold text-slate-800">{formatDate(currentDate)}</h1>
             <button
-              onClick={nextDate}
+              onClick={() => handleDateChange(1)}
               type="button"
               disabled={currentDate === today}
               className="bg-white p-1 text-sm text-slate-800 hover:bg-zinc-100 rounded-lg border"
@@ -219,7 +203,7 @@ const Dashboard = () => {
         </div>
         <div className="flex justify-end gap-3 items-center">
           <button
-            onClick={() => handleDownloadFile("/document/download-attendance", "attendance-report.xlsx")}
+            onClick={() => handleDownloadFile("/document/download-attendance", "attendance-report.xlsx", setToast)}
             className="bg-white flex gap-2 transition-all duration-300 ease-in-out text-zinc-500 border whitespace-nowrap px-3 py-2 rounded-lg hover:bg-gray-100 text-sm font-semibold"
           >
             <IconDownload /> Download Laporan Kehadiran
@@ -259,11 +243,12 @@ const Dashboard = () => {
       ) : attendanceData?.length > 0 ? (
         <>
           <Table title="Employee Table" icon="fa-users" columns={employeeColumns} data={attendances || []} />
-          {totalPages > 1 && <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />}
+          {attendancesDataPages > 1 && <Pagination currentPage={currentPage} totalPages={attendancesDataPages} onPageChange={handlePageChange} />}
         </>
       ) : (
         <NotFound />
       )}
+      {toast.message !== "" && <Toast type={toast.type} text={toast.message} onClick={() => setToast({ type: "", message: "" })} />}
     </DashboardLayouts>
   );
 };

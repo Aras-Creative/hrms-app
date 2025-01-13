@@ -86,7 +86,7 @@ const CreateEmployeeContract = () => {
           className={`${
             isStepComplete ? "bg-emerald-700 hover:bg-emerald-800" : "bg-zinc-500"
           } text-white font-semibold rounded-xl transition-all duration-300 ease-in-out px-3 py-2`}
-          // disabled={!isStepComplete}
+          disabled={!isStepComplete}
         >
           {isLastStep ? "Buat Data Karyawan" : "Selanjutnya"}
         </button>

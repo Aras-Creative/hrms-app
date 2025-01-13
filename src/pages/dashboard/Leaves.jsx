@@ -11,6 +11,7 @@ import Toast from "../../components/Toast";
 import { formatDate } from "../../utils/dateUtils";
 import FormInput from "../../components/FormInput";
 import { mappedLeavesData } from "../../utils/mappedSummaryData";
+import { InternalServerError, NotFound } from "../../components/Errors";
 
 const initialState = {
   currentPage: 1,
@@ -71,7 +72,7 @@ const Leaves = () => {
     () => [
       {
         key: "employee",
-        label: "Employee Name",
+        label: "Nama Karyawan",
         icon: <IconUserFilled />,
         render: (value, rowData) => {
           if (!rowData) return <span>Loading...</span>;
@@ -95,12 +96,12 @@ const Leaves = () => {
       },
       {
         icon: <IconCalendarTime />,
-        label: "Start Date & End Date",
+        label: "Durasi",
         render: (value, rowData) => (
           <div className="w-full flex items-center gap-3 whitespace-nowrap">
             <h1 className={`text-slate-800 text-sm`}>{formatDate(rowData?.startDate) || "N/A"}</h1>
             <div className="flex items-center gap-1">
-              <span className="text-xs text-zinc-400">to</span>
+              <span className="text-xs text-zinc-400">ke</span>
             </div>
             <h1 className={`text-slate-800 text-sm`}>{formatDate(rowData?.endDate) || "N/A"}</h1>
           </div>
@@ -108,13 +109,13 @@ const Leaves = () => {
       },
       {
         key: "leaveType",
-        label: "Leave Type",
+        label: "Tipe Cuti",
         icon: <IconQuestionMark />,
         render: (value) => {
           const typeStyles = {
-            sick: "bg-yellow-50 text-yellow-500 border-yellow-500",
-            emergency: "bg-red-50 text-red-500 border-red-500",
-            vacation: "bg-green-50 text-green-500 border-green-500",
+            sakit: "bg-yellow-50 text-yellow-500 border-yellow-500",
+            mendesak: "bg-red-50 text-red-500 border-red-500",
+            liburan: "bg-green-50 text-green-500 border-green-500",
             default: "bg-gray-50 text-gray-500 border-gray-500",
           };
           const style = typeStyles[value] || typeStyles.default;
@@ -123,13 +124,13 @@ const Leaves = () => {
       },
       {
         key: "reason",
-        label: "Reason",
+        label: "Alasan",
         icon: <IconBubbleText />,
         render: (value) => value || "N/A",
       },
       {
         key: "attachment",
-        label: "Attachment",
+        label: "Lampiran",
         icon: <IconLink />,
         render: (value, rowData) => {
           if (!value) return <span>No attachment</span>;
@@ -184,14 +185,14 @@ const Leaves = () => {
               <span className="rounded-full bg-emerald-700 text-white p-0.5 text-xs">
                 <IconCheck size={10} />
               </span>
-              {value}
+              {toTitleCase(value)}
             </span>
           ) : (
             <span className="text-red-500 px-2 py-1 rounded-full border border-red-500 bg-red-50 inline-flex gap-1 items-center overflow-hidden whitespace-nowrap text-ellipsis text-xs">
               <span className="rounded-full bg-red-500 text-white p-0.5 text-xs">
                 <IconX size={10} />
               </span>
-              {value}
+              {toTitleCase(value)}
             </span>
           );
         },
@@ -247,8 +248,10 @@ const Leaves = () => {
       </div>
       {loading ? (
         <Loading />
-      ) : error ? (
-        <p className="">Error: {error.message}</p>
+      ) : error?.status === 404 ? (
+        <NotFound />
+      ) : error?.status === 500 ? (
+        <InternalServerError />
       ) : (
         <Table title="Employee Table" icon="fa-users" columns={employeeColumns} data={leaveRequests || []} />
       )}

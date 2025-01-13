@@ -174,7 +174,7 @@ export const fetchJobRoles = async (filter, dispatch) => {
         dispatch({ type: "SET_JOB_ROLE_OPTIONS", payload: jobRoleOptions });
       }
     } catch (error) {
-      console.error("Error fetching job roles:", error);
+      dispatch({ type: "SET_JOB_ROLE_ERROR", payload: "Failed to fetch job roles." });
     }
   }
 };
@@ -215,9 +215,36 @@ export const SalaryTypeOptions = [
 
 export const attendanceFilter = [
   { label: "Pilih Filter", value: null },
-  { label: "Terlambat", value: "Late" },
-  { label: "Tepat waktu", value: "Present" },
-  { label: "Istirahat", value: "Break time" },
-  { label: "Pulang Awal", value: "Early Clock Out" },
-  { label: "Cuti/Izin", value: "Leave" },
+  { label: "Terlambat", value: "Terlambat" },
+  { label: "Hadir", value: "Hadir" },
+  { label: "Istirahat", value: "Istirahat" },
+  { label: "Pulang Awal", value: "Pulang Awal" },
+  { label: "Cuti/Izin", value: "Cuti" },
+];
+
+export const statusOptions = [
+  {
+    label: "Aktif",
+    value: "aktif",
+  },
+  {
+    label: "Nonaktif",
+    value: "nonaktif",
+  },
+  {
+    label: "Pending",
+    value: "pending",
+  },
+  {
+    label: "Peringatan",
+    value: "peringatan",
+  },
+  {
+    label: "Kontrak Berakhir",
+    value: "kontrak_berakhir",
+  },
+  {
+    label: "Tanpa Kontrak",
+    value: "tanpa_kontrak",
+  },
 ];

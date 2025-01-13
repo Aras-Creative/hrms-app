@@ -55,16 +55,16 @@ const TimeManagement = () => {
 const AttendanceCard = ({ attendance, dateRange, formatDate, calculateDuration }) => {
   return (
     <div className="w-full bg-white rounded-lg p-6 border border-zinc-200 overflow-hidden">
-      <h1 className="w-full text-sm font-bold text-slate-800">{attendance.date === dateRange.endDate ? "Today" : formatDate(attendance.date)}</h1>
+      <h1 className="w-full text-sm font-bold text-slate-800">{attendance.date === dateRange.endDate ? "Hari Ini" : formatDate(attendance.date)}</h1>
       <div className="mt-3 w-full flex items-center gap-4">
-        <AttendanceDetail label="Clock-in" time={attendance.clockIn} status={attendance.status} />
+        <AttendanceDetail label="Jam Masuk" time={attendance.clockIn} status={attendance.status} />
         <div className="grow w-full pl-4 border-l border-zinc-300">
           <TimeSlots />
           <ProgressBar attendance={attendance} />
         </div>
-        <AttendanceDetail label="Clock-out" time={attendance.clockOut} status={attendance.status} />
+        <AttendanceDetail label="Jam Pulang" time={attendance.clockOut} status={attendance.status} />
         <DurationDetail
-          label="Duration"
+          label="Durasi"
           duration={calculateDuration(attendance.clockIn, attendance.clockOut, attendance.breakIn, attendance.breakOut)}
         />
       </div>
@@ -174,11 +174,11 @@ const ProgressBar = ({ attendance }) => {
     const { latePercentage, workBeforeBreakPercentage, breakPercentage, workAfterBreakPercentage, earlyClockOutPercentage } = percentages;
 
     const segments = [
-      { width: latePercentage, color: "bg-red-500", label: "Late" },
-      { width: workBeforeBreakPercentage, color: "bg-blue-500", label: "Working time" },
-      { width: breakPercentage, color: "bg-teal-500", label: "Break Time" },
-      { width: workAfterBreakPercentage, color: "bg-blue-500", label: "Working Time" },
-      { width: earlyClockOutPercentage, color: "bg-orange-500", label: "Early Clock Out" },
+      { width: latePercentage, color: "bg-red-500", label: "Terlambat" },
+      { width: workBeforeBreakPercentage, color: "bg-blue-500", label: "Waktu Bekerja" },
+      { width: breakPercentage, color: "bg-teal-500", label: "Waktu Istirahat" },
+      { width: workAfterBreakPercentage, color: "bg-blue-500", label: "Waktu Bekerja" },
+      { width: earlyClockOutPercentage, color: "bg-orange-500", label: "Pulang Awal" },
     ];
 
     let currentPosition = 0; // Tracking the cumulative width for position
@@ -213,17 +213,17 @@ const ProgressSegment = ({ width, color, label, style }) => (
 );
 
 const StatusIndicator = ({ status }) => {
-  const bgColor = status === "Leave" ? "bg-yellow-500" : status === "Holiday" ? "bg-emerald-700" : "bg-red-500";
+  const bgColor = status === "Cuti" ? "bg-yellow-500" : status === "Libur" ? "bg-emerald-700" : "bg-red-500";
   return (
     <div className={`h-full w-full ${bgColor} flex justify-center items-center text-xs text-white font-semibold`}>
-      {status === "Leave" ? "Leave" : status === "Holiday" ? "Holiday" : "Absent"}
+      {status === "Cuti" ? "Cuti" : status === "Libur" ? "Libur" : "Tidak Masuk"}
     </div>
   );
 };
 
 const getStatusColor = (status) => {
-  if (status === "Late") return "text-red-500";
-  if (status === "Absent" || status === "Leave") return "text-zinc-400";
+  if (status === "Terlambat") return "text-red-500";
+  if (status === "Tidak Masuk" || status === "Cuti") return "text-zinc-400";
   return "text-slate-800";
 };
 

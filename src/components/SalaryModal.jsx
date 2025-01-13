@@ -283,7 +283,7 @@ const SalaryModal = ({ employeeId, handleClose, isVisible, periode, refetch }) =
               <FormInput
                 type="currency"
                 label={"Gaji Pokok"}
-                value={salaryAdjustment?.salary?.basicSalary}
+                value={salaryAdjustment?.salary?.basicSalary || "0"}
                 border={"border-b"}
                 onChange={(ammount) => handleCurrencyInput("salary", "basicSalary")(ammount)}
               />

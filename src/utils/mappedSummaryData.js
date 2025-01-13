@@ -37,7 +37,6 @@ export const mappedLeavesData = (stats) => {
 };
 
 export const mappedAttendanceData = (stats) => {
-  console.log(stats);
   const todayStats = stats?.todayStats || {
     totalEmployees: 0,
     present: "0",
@@ -66,24 +65,24 @@ export const mappedAttendanceData = (stats) => {
     attendanceData: [
       {
         label: "Tepat Waktu",
-        value: toNumber(todayStats.present),
+        value: toNumber(todayStats.hadir),
         change: calculateChange("present"),
       },
       {
         label: "Terlambat",
-        value: toNumber(todayStats.late),
+        value: toNumber(todayStats.terlambat),
         change: calculateChange("late"),
       },
       {
         label: "Pulang Lebih Awal",
-        value: toNumber(todayStats["early_clock out"]),
+        value: toNumber(todayStats["pulang_awal"]),
         change: calculateChange("early clock out"),
       },
     ],
     notPresentData: [
       {
         label: "Absen",
-        value: toNumber(todayStats.absent),
+        value: toNumber(todayStats["tidak_masuk"]),
         change: calculateChange("absent"),
       },
       {
@@ -93,7 +92,7 @@ export const mappedAttendanceData = (stats) => {
       },
       {
         label: "Izin/Cuti",
-        value: toNumber(todayStats.leave),
+        value: toNumber(todayStats.libur),
         change: calculateChange("leave"),
       },
     ],

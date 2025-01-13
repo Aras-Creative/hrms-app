@@ -17,6 +17,7 @@ export const getInitialData = (formName) => {
 };
 
 export const calculateDaysLeft = (end) => {
+  if (!end) return "0";
   const currentDate = new Date();
   const endDate = new Date(end);
 

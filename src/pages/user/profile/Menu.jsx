@@ -150,6 +150,12 @@ const Menu = () => {
             </div>
           </button>
         </div>
+
+        <div className=" text-center text-xs text-slate-600 pb-6">
+          &copy; {new Date().getFullYear()} Sekantor by Aras Creative. All rights reserved.
+          <br />
+          Version 1.0.0
+        </div>
       </div>
     </Layouts>
   );

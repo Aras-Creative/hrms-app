@@ -5,6 +5,7 @@ import {
   IconBriefcase,
   IconDots,
   IconDownload,
+  IconFileImport,
   IconGenderBigender,
   IconGraph,
   IconGridScan,
@@ -28,6 +29,7 @@ import { Loading } from "../../../components/Preloaders";
 import FormInput from "../../../components/FormInput";
 import Pagination from "../../../components/Pagination";
 import { handleDownloadFile } from "../../../utils/handleDownloadFile";
+import ExcelUpload from "../../../components/ExcelUpload";
 
 // Initial state for the reducer
 const initialState = {
@@ -43,6 +45,7 @@ const initialState = {
       jobRoleId: "",
       jobRoleTitle: "",
     },
+    status: "",
   },
   searchQuery: "",
   debouncedSearchQuery: "",
@@ -91,8 +94,9 @@ const Employee = () => {
   const query = useMemo(() => {
     const genderQuery = filterParams.gender ? `gender=${filterParams.gender.toLowerCase()}` : "";
     const jobRoleQuery = filterParams.jobRole.jobRoleId ? `jobRole=${filterParams.jobRole.jobRoleId.toLowerCase()}` : "";
+    const statusQuery = filterParams.status ? `status=${filterParams.status.toLowerCase()}` : "";
     const q = debouncedSearchQuery ? `q=${debouncedSearchQuery.toLowerCase()}` : "";
-    return [genderQuery, jobRoleQuery, q].filter(Boolean).join("&");
+    return [genderQuery, jobRoleQuery, q, statusQuery].filter(Boolean).join("&");
   }, [filterParams, debouncedSearchQuery]);
 
   const url = `/employee${query ? `?${query}` : ""}`;
@@ -150,7 +154,7 @@ const Employee = () => {
           );
         },
       },
-      { key: "gender", label: "Jenis Kelamin", icon: <IconGenderBigender size={20} /> },
+      { key: "gender", label: "Jenis Kelamin", icon: <IconGenderBigender size={20} />, render: (value) => value || "-" },
       { key: "jobRole", label: "Job Role", icon: <IconBriefcase size={20} />, render: (value) => value?.jobRoleTitle },
       {
         key: "status",
@@ -161,9 +165,11 @@ const Employee = () => {
             className={`${
               value === "aktif"
                 ? "bg-green-100 text-emerald-700 border-emerald-700"
-                : value === "nonaktif" || "peringatan"
+                : value === "nonaktif"
                 ? "bg-red-100 text-red-500 border-red-500"
-                : "bg-yellow-100 text-yellow-500 border-yellow-500"
+                : value === "peringatan"
+                ? "bg-yellow-100 text-yellow-500 border-yellow-500"
+                : "bg-zinc-100 text-zinc-500"
             } inline-flex rounded-full border px-2 py-1`}
           >
             {toTitleCase(value)}
@@ -175,7 +181,7 @@ const Employee = () => {
         label: "Informasi Kontak",
         icon: <IconAddressBook size={20} />,
         render: (value, rowData) => (
-          <div className="flex flex-col gap-2">
+          <div className="flex gap-2">
             {value && (
               <span className="text-blue-500 px-2 py-1 rounded-full border text-xs border-blue-500 inline-flex gap-1 items-center">
                 <IconPhone size={16} /> {value}
@@ -229,6 +235,8 @@ const Employee = () => {
                 <IconPlus size={20} />
                 <span className="text-sm text-white font-bold">Tambah Data Karyawan</span>
               </NavLink>
+              <ExcelUpload />
+
               <button
                 type="button"
                 onClick={() => handleDownloadFile("/document/download-employee", "employees-data.xlsx")}
@@ -241,10 +249,7 @@ const Employee = () => {
           </div>
         </div>
         <div className="w-full flex justify-between items-center mb-5">
-          {/* Search Input */}
           <SearchInput searchQuery={searchQuery} handleSearchChange={handleSearchChange} />
-
-          {/* Filter Dropdown and Table View Buttons */}
           <div className="flex gap-3 items-center max-w-1/2 justify-end scrollbar-none">
             <FilterDropdown filter={filter} filterParams={filterParams} jobRoleOptions={jobRoleOptions} dispatch={dispatch} />
             <FormInput
@@ -262,7 +267,6 @@ const Employee = () => {
           </div>
         </div>
 
-        {/* Table or Grid Display */}
         {employeeDataLoading ? (
           <Loading />
         ) : employeeDataError?.status === 404 ? (
@@ -272,7 +276,7 @@ const Employee = () => {
         ) : tableView === "list" ? (
           <>
             <Table title="Employee Table" columns={employeeColumns} data={employeeData || []} />
-            <Pagination totalPages={totalPages} currentPage={currentPage} handlePageChange={handlePageChange} />
+            <Pagination totalPages={totalPages} currentPage={currentPage} onPageChange={handlePageChange} />
           </>
         ) : (
           <Grid data={employeeData} />

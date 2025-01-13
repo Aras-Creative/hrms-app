@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import DashboardLayouts from "../../../../layouts/DashboardLayouts";
 import { NavLink, useParams } from "react-router-dom";
 import {
-  IconAlertCircle,
   IconAlertCircleFilled,
   IconArrowLeft,
+  IconCheck,
   IconCircleOff,
   IconContract,
   IconDotsVertical,
@@ -34,6 +34,7 @@ const EmployeeDetails = () => {
   const { employeeId } = useParams();
   const [activeTab, setActiveTab] = useState("personalInformation");
   const [actions, setActions] = useState(false);
+  const [toast, setToast] = useState({ type: "", text: "" });
 
   // Fetch employee data
   const {
@@ -42,6 +43,8 @@ const EmployeeDetails = () => {
     refetch: employeeDataRefetch,
     error: employeeDataError,
   } = useFetch(`/employee/${employeeId}/details`);
+
+  const { updateData: updateStatus } = useFetch(`/employee/${employeeId}/status`, { method: "PUT" });
 
   const profileImage = employeeData?.profilePicture && `${STORAGE_URL}/document/${employeeId}/${employeeData.profilePicture.path}`;
   const renderTabContent = () => {
@@ -52,6 +55,21 @@ const EmployeeDetails = () => {
     }
     return null;
   };
+
+  const handleUpdateStatus = async (status) => {
+    const { success, error } = await updateStatus({ status });
+    if (success) {
+      setActions(false);
+      employeeDataRefetch();
+      setToast({ type: "success", text: "Status karyawan berhasil di update" });
+    } else {
+      setToast({ type: "error", text: error.message });
+    }
+  };
+
+  useEffect(() => {
+    setTimeout(() => setToast({ type: "", message: "" }), 4000);
+  }, [toast.message]);
 
   return (
     <DashboardLayouts>
@@ -82,10 +100,26 @@ const EmployeeDetails = () => {
               </div>
               <span
                 className={`${
-                  employeeData?.status === "aktif" ? "bg-green-100 text-green-600" : "bg-red-100 text-red-500 "
+                  employeeData?.status === "aktif"
+                    ? "bg-green-100 text-green-600"
+                    : employeeData?.status === "nonakitf"
+                    ? "bg-red-100 text-red-500 "
+                    : employeeData?.status === "peringatan"
+                    ? "bg-yellow-100 text-yellow-500 "
+                    : "bg-zinc-300 text-zinc-600"
                 } text-xs gap-2  px-2 py-0.5 inline-flex items-center rounded-xl`}
               >
-                <span className={`${employeeData?.status === "aktif" ? "bg-green-600" : "bg-red-500"} w-1.5 h-1.5 rounded-full`} />{" "}
+                <span
+                  className={`${
+                    employeeData?.status === "aktif"
+                      ? "bg-green-700"
+                      : employeeData?.status === "nonakitf"
+                      ? "bg-red-600"
+                      : employeeData?.status === "peringatan"
+                      ? "bg-yellow-500"
+                      : "bg-zinc-700"
+                  } w-1.5 h-1.5 rounded-full`}
+                />{" "}
                 {toTitleCase(employeeData?.status)}
               </span>
             </div>
@@ -104,12 +138,29 @@ const EmployeeDetails = () => {
             {actions && (
               <div className="bg-white absolute top-12 right-0 whitespace-nowrap rounded-xl shadow-md px-3 py-2 border border-zinc-300">
                 <div className="flex flex-col gap-2">
-                  <button className="bg-white flex items-center gap-2 hover:bg-zinc-100 transition-all py-2 px-3 rounded-t-lg">
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateStatus("aktif")}
+                    className="bg-white flex items-center gap-2 hover:bg-zinc-100 transition-all py-2 px-3 rounded-b-lg"
+                  >
+                    <IconCheck className="text-emerald-700" />
+                    <span className="text-sm text-slate-800">Aktifkan</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateStatus("peringatan")}
+                    className="bg-white flex items-center gap-2 hover:bg-zinc-100 transition-all py-2 px-3 rounded-t-lg"
+                  >
                     <IconAlertCircleFilled className="text-yellow-500" />
                     <span className="text-sm text-slate-800">Berikan Peringatan</span>
                   </button>
 
-                  <button className="bg-white flex items-center gap-2 hover:bg-zinc-100 transition-all py-2 px-3 rounded-b-lg">
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateStatus("nonaktif")}
+                    className="bg-white flex items-center gap-2 hover:bg-zinc-100 transition-all py-2 px-3 rounded-b-lg"
+                  >
                     <IconCircleOff className="text-red-500" />
                     <span className="text-sm text-slate-800">Nonaktifkan</span>
                   </button>

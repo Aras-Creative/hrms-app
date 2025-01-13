@@ -69,37 +69,39 @@ const DashboardLayouts = ({ children }) => {
             <div className="w-full bg-zinc-100 flex-1">
               <section className="main-content flex-1 2xl:p-6 p-4">{children}</section>
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center justify-center">
               <footer className="mt-4 text-center text-gray-600 w-full text-sm py-4">
                 © {new Date().getFullYear()} Aras Creative. All rights reserved.
               </footer>
-              <div className="w-full flex flex-1 items-center justify-end pr-8 py-6">
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={handleShowNotification}
-                    className="rounded-full p-4 bg-slate-800 hover:bg-slate-700 transition-all duration-300 ease-in-out text-slate-200"
-                  >
-                    <div className="relative">
-                      <IconBell />
-                      {(notifBadge || hasUnreadNotification) && <div className="absolute bg-red-500 h-2 w-2 top-0 right-0.5 rounded-full"></div>}
-                    </div>
-                  </button>
-                  <div className="absolute bottom-0 flex-row-reverse right-16">
-                    {showNotification && (
-                      <Notification
-                        onClose={() => {
-                          setShowNotification((prev) => !prev);
-                          setNotifBadge(false);
-                          refetch();
-                        }}
-                      />
-                    )}
-                  </div>
-                </div>
-              </div>
             </div>
           </main>
+        </div>
+      </div>
+      <div className="fixed bottom-0 right-0">
+        <div className="w-full flex flex-1 items-center justify-end pr-8 py-6">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={handleShowNotification}
+              className="rounded-full p-4 bg-slate-800 hover:bg-slate-700 transition-all duration-300 ease-in-out text-slate-200"
+            >
+              <div className="relative">
+                <IconBell />
+                {(notifBadge || hasUnreadNotification) && <div className="absolute bg-red-500 h-2 w-2 top-0 right-0.5 rounded-full"></div>}
+              </div>
+            </button>
+            <div className="absolute bottom-0 flex-row-reverse right-16">
+              {showNotification && (
+                <Notification
+                  onClose={() => {
+                    setShowNotification((prev) => !prev);
+                    setNotifBadge(false);
+                    refetch();
+                  }}
+                />
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

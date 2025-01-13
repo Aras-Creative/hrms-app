@@ -1,7 +1,8 @@
 import React from "react";
 import { IconChevronDown, IconFilter } from "@tabler/icons-react";
 import FormInput from "./FormInput";
-import { genderFilterOptions } from "../utils/SelectOptions";
+import { genderFilterOptions, statusOptions } from "../utils/SelectOptions";
+import { toTitleCase } from "../utils/toTitleCase";
 
 const FilterDropdown = ({ filter, filterParams, jobRoleOptions, dispatch }) => (
   <div className="relative">
@@ -13,9 +14,11 @@ const FilterDropdown = ({ filter, filterParams, jobRoleOptions, dispatch }) => (
       <div className="pr-2">
         <div
           className={`h-5 w-5 items-center ${
-            !filterParams.gender && !filterParams.jobRole.jobRoleId ? "hidden" : "flex"
+            !filterParams.gender && !filterParams.jobRole.jobRoleId && !filterParams.status ? "hidden" : "flex"
           } justify-center text-xs text-white rounded-full bg-emerald-700`}
-        />
+        >
+          {[filterParams.gender ? 1 : 0, filterParams.jobRole.jobRoleId ? 1 : 0, filterParams.status ? 1 : 0].reduce((total, num) => total + num, 0)}
+        </div>
       </div>
       <IconFilter size={16} />
       Filter
@@ -51,6 +54,16 @@ const FilterDropdown = ({ filter, filterParams, jobRoleOptions, dispatch }) => (
               value: filterParams.gender,
             }}
             onChange={(e) => dispatch({ type: "SET_FILTER_PARAMS", payload: { ...filterParams, gender: e.value } })}
+          />
+          <FormInput
+            type="select"
+            options={statusOptions}
+            placeholder={"Filter Status"}
+            value={{
+              label: toTitleCase(filterParams.status) || "Pilih status",
+              value: filterParams.status,
+            }}
+            onChange={(e) => dispatch({ type: "SET_FILTER_PARAMS", payload: { ...filterParams, status: e.value } })}
           />
           <FormInput
             type="select"

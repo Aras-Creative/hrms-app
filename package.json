@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fingerprintjs/fingerprintjs": "^4.5.1",
     "@tabler/icons-react": "^3.22.0",
     "axios": "^1.7.9",
     "clsx": "^2.1.1",
@@ -28,7 +29,8 @@
     "react-router-dom": "^6.28.0",
     "react-select": "^5.8.3",
     "socket.io-client": "^4.8.1",
-    "tailwind-datepicker-react": "^1.4.3"
+    "tailwind-datepicker-react": "^1.4.3",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",

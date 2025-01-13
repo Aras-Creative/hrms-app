@@ -1,19 +1,17 @@
 import React, { useCallback, useState } from "react";
 import Layouts from "./Layouts";
 import useAuth from "../../../hooks/useAuth";
-import avatarPlaceholder from "../../../assets/avatar.png";
 import { IconCamera } from "@tabler/icons-react";
 import FormInput from "../../../components/FormInput";
 import Datepicker from "../../../components/Datepicker";
 import useFetch from "../../../hooks/useFetch";
-import { useNavigate } from "react-router-dom";
 import { STORAGE_URL } from "../../../config";
 import Snackbar from "../../../components/Snackbar";
+import { genderOptions, religionOptions } from "../../../utils/SelectOptions";
 
 const ProfileDetails = () => {
   const { profile, profileRefetch } = useAuth();
   const [snackbar, setSnackbar] = useState({ text: "", show: false });
-  const navigate = useNavigate();
 
   const [updatedProfileImage, setUpdatedProfileImage] = useState(null);
   const [profileFile, setProfileFile] = useState(null);
@@ -28,7 +26,6 @@ const ProfileDetails = () => {
 
   const { responseData: ProfilePicture } = useFetch(`/employee/profile-picture/${profile.userId}`);
 
-  // Fetch hook for submitting data
   const { updateData, loading } = useFetch(
     `/profile/update/${profile?.userId}`,
     { method: "PUT" },
@@ -46,7 +43,6 @@ const ProfileDetails = () => {
     }
   };
 
-  // Handle form data change
   const handleDataChange = useCallback((field, value) => {
     setProfileData((prevData) => {
       if (prevData[field] !== value) {
@@ -79,7 +75,10 @@ const ProfileDetails = () => {
     const { success, data, error: submitError } = await updateData(formData);
     if (success) {
       setSnackbar({ text: data.message, show: true });
-      setTimeout(() => setSnackbar({ text: "", show: false }), 2000);
+      setTimeout(() => {
+        setSnackbar({ text: "", show: false });
+        profileRefetch();
+      }, 2000);
     } else {
       const mappedErrors = submitError.reduce((acc, errorObj) => {
         for (let field in errorObj) {
@@ -91,22 +90,6 @@ const ProfileDetails = () => {
       setErrors(mappedErrors);
     }
   };
-
-  // Define gender and religion options
-  const genderOptions = [
-    { label: "Male", value: "Male" },
-    { label: "Female", value: "Female" },
-    { label: "Other", value: "Other" },
-  ];
-
-  const religionOptions = [
-    { label: "Islam", value: "Islam" },
-    { label: "Protestan", value: "Protestan" },
-    { label: "Katolik", value: "Katolik" },
-    { label: "Hindu", value: "Hindu" },
-    { label: "Buddha", value: "Buddha" },
-    { label: "Khonghucu", value: "Khonghucu" },
-  ];
 
   const getInitials = (name) => {
     if (!name) return "";

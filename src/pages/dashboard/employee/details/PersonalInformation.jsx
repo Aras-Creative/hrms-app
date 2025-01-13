@@ -80,6 +80,10 @@ const PersonalInformation = ({ data, refetch }) => {
     setIsFormEdit((prev) => ({ ...prev, [formName]: false }));
   };
 
+  useEffect(() => {
+    setTimeout(() => setToast({ type: "", message: "" }), 4000);
+  }, [toast.message]);
+
   return (
     <div className="w-full h-full flex gap-4 flex-grow">
       <div className="flex flex-col gap-4 w-2/3">
@@ -104,7 +108,7 @@ const PersonalInformation = ({ data, refetch }) => {
                 type="select"
                 label="Jenis Kelamin"
                 options={genderOptions}
-                value={{ label: formData.personalInfo.gender, value: formData.personalInfo.gender }}
+                value={{ label: formData.personalInfo.gender || "-", value: formData.personalInfo.gender }}
                 onChange={handleSelect("personalInfo", "gender")}
                 onEdit={isFormEdit.personalInfo}
                 erorr={errors.gender}
@@ -113,7 +117,7 @@ const PersonalInformation = ({ data, refetch }) => {
                 type="select"
                 label="Agama"
                 options={religionOptions}
-                value={{ label: formData.personalInfo.religion, value: formData.personalInfo.religion }}
+                value={{ label: formData.personalInfo.religion || "-", value: formData.personalInfo.religion }}
                 onChange={handleSelect("personalInfo", "religion")}
                 onEdit={isFormEdit.personalInfo}
                 erorr={errors.religion}
@@ -229,8 +233,13 @@ const PersonalInformation = ({ data, refetch }) => {
 
         <Card title="Ringkasan Karyawan" icon={<IconId />} isEditable={false}>
           <div className="mt-6 w-full grid grid-cols-2 gap-6 pb-4">
-            <FormInput type="text" label="Tanggal Bergabung" value={formatDate(formData.employementData.dateStarted)} onEdit={false} />
-            <FormInput type="text" label="Tipe Karyawan" value={formData.employementData.employementType} onEdit={false} />
+            <FormInput
+              type="text"
+              label="Tanggal Bergabung"
+              value={formData.employementData.dateStarted ? formatDate(formData.employementData.dateStarted) : "-"}
+              onEdit={false}
+            />
+            <FormInput type="text" label="Tipe Karyawan" value={formData.employementData.employementType || "-"} onEdit={false} />
           </div>
           <FormInput type="text" label="Job Role" value={formData.employementData.jobRole || "-"} onEdit={false} />
         </Card>

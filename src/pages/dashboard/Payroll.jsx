@@ -6,6 +6,8 @@ import {
   IconBrandCashapp,
   IconCash,
   IconCashOff,
+  IconCheck,
+  IconChecklist,
   IconDots,
   IconMail,
   IconMoneybag,
@@ -19,7 +21,6 @@ import { NavLink } from "react-router-dom";
 import SalaryModal from "../../components/SalaryModal";
 import { formatCurrency } from "../../utils/formatCurrency";
 import { STORAGE_URL } from "../../config";
-import Pagination from "../../components/Pagination";
 import { InternalServerError, NotFound } from "../../components/Errors";
 import { Loading } from "../../components/Preloaders";
 
@@ -41,6 +42,7 @@ const getInitialPeriode = () => {
 const Payroll = () => {
   const [periode, setPeriode] = useState(getInitialPeriode());
   const [modalOpen, setModalOpen] = useState({ isOpen: false, employeeId: "" });
+  const [selectedUserIds, setSelectedUserIds] = useState([]);
 
   const handlePeriodeChange = useCallback((action) => {
     setPeriode((prevPeriode) => {
@@ -73,7 +75,6 @@ const Payroll = () => {
     responseData: employeeData = [],
     loading: employeeDataLoading,
     error: employeeDataError,
-    totalPages: employeeDataPages,
     refetch: employeeDataRefetch,
   } = useFetch(`/employee/payroll?periode=${periode?.formattedPeriode}`);
 
@@ -95,6 +96,7 @@ const Payroll = () => {
   }, [employeeData]);
 
   const { submitData: distributePayslip } = useFetch("/employee/payroll/distribute", { method: "POST" });
+  const { updateData: markAsPaid } = useFetch("/employee/payroll/paid", { method: "PUT" });
 
   const handleDistributePayslip = useCallback(async () => {
     if (allHavePayrolls) {
@@ -102,6 +104,26 @@ const Payroll = () => {
       // Handle success or error as needed
     }
   }, [allHavePayrolls, distributePayslip, formattedEmployees]);
+
+  const handleCheckboxChange = (event) => {
+    const isChecked = event.target.checked;
+    const userId = event.target.value;
+    setSelectedUserIds((prevSelected) => {
+      if (isChecked) {
+        return [...prevSelected, userId];
+      } else {
+        return prevSelected.filter((id) => id !== userId);
+      }
+    });
+  };
+
+  const handleMarkAsPaid = async () => {
+    const { success, error, data } = await markAsPaid({ userIds: selectedUserIds });
+    if (success) {
+      employeeDataRefetch();
+      setSelectedUserIds([]);
+    }
+  };
 
   const employeeColumns = [
     {
@@ -112,6 +134,11 @@ const Payroll = () => {
         const profileImage = employee?.profilePicture && `${STORAGE_URL}/document/${employee?.userId}/${employee.profilePicture.path}`;
         return (
           <div className="flex items-center gap-3">
+            <div>
+              <label>
+                <input type="checkbox" value={employee?.userId} onChange={handleCheckboxChange} />
+              </label>
+            </div>
             {profileImage ? (
               <img src={profileImage} alt={`${employee?.fullName}'s Profile`} className="w-10 h-10 rounded-full object-cover" />
             ) : (
@@ -219,8 +246,8 @@ const Payroll = () => {
               </div>
             </div>
           </div>
-          <div className="flex justify-between items-center w-full">
-            <div className="pl-4 flex items-center gap-4 mb-6">
+          <div className="flex justify-between items-center w-full mb-6">
+            <div className="pl-4 flex items-center gap-4">
               <button
                 onClick={() => handlePeriodeChange("prev")}
                 type="button"
@@ -248,16 +275,29 @@ const Payroll = () => {
               </button>
             </div>
 
-            {allHavePayrolls && (
-              <button
-                type="button"
-                onClick={handleDistributePayslip}
-                className="bg-emerald-700 rounded-xl px-3 py-2 flex items-center hover:bg-emerald-800 text-white"
-              >
-                <IconMail /> Distribute Employee Payslip
-              </button>
-            )}
+            <div className="flex gap-3 items-center">
+              {allHavePayrolls && (
+                <button
+                  type="button"
+                  onClick={handleDistributePayslip}
+                  className="bg-emerald-700 rounded-xl px-3 py-2 flex items-center hover:bg-emerald-800 text-white"
+                >
+                  <IconMail /> Distribusikan Payslip
+                </button>
+              )}
+
+              {selectedUserIds.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleMarkAsPaid}
+                  className="bg-emerald-700 rounded-xl px-3 py-2 flex items-center hover:bg-emerald-800 text-white"
+                >
+                  <IconChecklist /> Tandai Telah Dibayarkan
+                </button>
+              )}
+            </div>
           </div>
+
           {employeeDataLoading ? (
             <Loading />
           ) : employeeDataError?.status === 404 ? (

@@ -66,6 +66,7 @@ const FormInput = ({ type = "text", label, value, onChange, options, erorr, onEd
               }),
             }}
           />
+          {erorr && <p className="text-xs text-red-500">{erorr}</p>}
         </div>
       ) : type === "currency" ? (
         <div className="flex flex-col gap-2 w-full">
@@ -102,6 +103,7 @@ const FormInput = ({ type = "text", label, value, onChange, options, erorr, onEd
             required
             disabled={!onEdit}
           />
+          {erorr && <p className="text-xs text-red-500">{erorr}</p>}
         </div>
       ) : (
         <div className="flex flex-col gap-2 w-full">

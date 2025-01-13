@@ -2,12 +2,9 @@ import { Routes, Route } from "react-router-dom";
 import Login from "../pages/Login";
 import Dashboard from "../pages/dashboard/Dashboard";
 import { AuthProvider } from "../context/AuthContext";
-import ProfileSetup from "../pages/onboarding/ProfileSetup";
 import RouteGuard from "../hoc/RouteGuard";
 import Homepage from "../pages/user/Homepage";
 import Menu from "../pages/user/profile/Menu";
-import VerifyId from "../pages/verification/VerifyId";
-import Verification from "../pages/verification/Verification";
 import Details from "../pages/user/profile/Details";
 import Security from "../pages/user/profile/Security";
 import Register from "../pages/auth/Register";
@@ -26,6 +23,10 @@ import Password from "../pages/user/profile/Password";
 import Documents from "../pages/dashboard/Documents";
 import Files from "../pages/dashboard/settings/Files";
 import JobRole from "../pages/dashboard/JobRole";
+import Welcome from "../pages/Welcome";
+import PrivacyPolicy from "../pages/user/profile/PrivacyPolicy";
+import TermsCondition from "../pages/user/profile/TermsCondition";
+import FAQ from "../pages/user/profile/FAQ";
 
 function RouterHandler() {
   return (
@@ -36,6 +37,7 @@ function RouterHandler() {
           <Route path="register" element={<Register />} />
         </Route>
         <Route path="/" element={<RouteGuard type={"private"} allowedRoles={["user"]} />}>
+          <Route path="/tes" element={<Welcome />} />
           <Route path="homepage" element={<Homepage />} />
           <Route path="settings" element={<Menu />} />
           <Route path="me" element={<Details />} />
@@ -45,6 +47,9 @@ function RouterHandler() {
           <Route path="leave/request" element={<LeaveRequest />} />
           <Route path="security/contacts" element={<Contact />} />
           <Route path="security/password" element={<Password />} />
+          <Route path="privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="terms-and-condition" element={<TermsCondition />} />
+          <Route path="faq" element={<FAQ />} />
         </Route>
         <Route path="/" element={<RouteGuard type={"private"} allowedRoles={["admin"]} />}>
           <Route path="dashboard" element={<Dashboard />} />
@@ -59,9 +64,6 @@ function RouterHandler() {
           <Route path="dashboard/document" element={<Documents />} />
           <Route path="dashboard/document/:path" element={<Files />} />
         </Route>
-        <Route path="/tes" element={<ProfileSetup />} />
-        <Route path="/verify" element={<VerifyId />} />
-        <Route path="/verification" element={<Verification />} />
       </Routes>
     </AuthProvider>
   );
