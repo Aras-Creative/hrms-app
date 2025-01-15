@@ -5,7 +5,6 @@ import { Loading } from "../components/Preloaders";
 const RouteGuard = ({ type, allowedRoles }) => {
   const { auth, profile, profileLoading, profileError, isProfileComplete } = useAuth();
 
-  // Show loading state if profile is loading or if there's no authentication
   const isLoading = profileLoading || !auth;
   if (isLoading) {
     return (
@@ -15,12 +14,10 @@ const RouteGuard = ({ type, allowedRoles }) => {
     );
   }
 
-  // Check login status and role
   const isLoggedIn = !!auth?.token && !!auth?.user;
   const hasProfile = profile && !profileError;
   const hasRole = !allowedRoles || allowedRoles.includes(auth?.user?.role);
 
-  // Guard for 'guest' type
   if (type === "guest") {
     if (isLoggedIn) {
       const redirectPath = auth?.user?.role === "user" ? "/homepage" : "/dashboard";
@@ -29,7 +26,6 @@ const RouteGuard = ({ type, allowedRoles }) => {
     return <Outlet />;
   }
 
-  // Guard for 'private' type
   if (type === "private") {
     if (!isLoggedIn || (!hasProfile && auth?.user?.role === "user")) {
       return <Navigate to="/auth/login" replace />;
@@ -40,8 +36,6 @@ const RouteGuard = ({ type, allowedRoles }) => {
     return <Outlet />;
   }
 
-  // Catch invalid `type` and log an error
-  console.error(`Invalid RouteGuard type: ${type}`);
   return <Navigate to="/" replace />;
 };
 

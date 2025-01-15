@@ -181,8 +181,7 @@ const ProgressBar = ({ attendance }) => {
       { width: earlyClockOutPercentage, color: "bg-orange-500", label: "Pulang Awal" },
     ];
 
-    let currentPosition = 0; // Tracking the cumulative width for position
-
+    let currentPosition = 0;
     return (
       <>
         {segments
@@ -190,9 +189,9 @@ const ProgressBar = ({ attendance }) => {
           .map((segment, index) => {
             const segmentStyle = {
               width: `${segment.width}%`,
-              left: `${currentPosition}%`, // Positioning the segment based on previous segments
+              left: `${currentPosition}%`,
             };
-            currentPosition += segment.width; // Update the position for the next segment
+            currentPosition += segment.width;
 
             return <ProgressSegment key={index} width={segment.width} color={segment.color} label={segment.label} style={segmentStyle} />;
           })}
@@ -213,17 +212,17 @@ const ProgressSegment = ({ width, color, label, style }) => (
 );
 
 const StatusIndicator = ({ status }) => {
-  const bgColor = status === "Cuti" ? "bg-yellow-500" : status === "Libur" ? "bg-emerald-700" : "bg-red-500";
+  const bgColor = status === "Izin Cuti" ? "bg-yellow-500" : status === "Libur" ? "bg-emerald-700" : "bg-red-500";
   return (
     <div className={`h-full w-full ${bgColor} flex justify-center items-center text-xs text-white font-semibold`}>
-      {status === "Cuti" ? "Cuti" : status === "Libur" ? "Libur" : "Tidak Masuk"}
+      {status === "Izin Cuti" ? "Cuti" : status === "Libur" ? "Libur" : "Tidak Masuk"}
     </div>
   );
 };
 
 const getStatusColor = (status) => {
   if (status === "Terlambat") return "text-red-500";
-  if (status === "Tidak Masuk" || status === "Cuti") return "text-zinc-400";
+  if (status === "Tidak Masuk" || status === "Izin Cuti") return "text-zinc-400";
   return "text-slate-800";
 };
 

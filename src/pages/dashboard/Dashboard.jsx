@@ -86,6 +86,8 @@ const Dashboard = () => {
     return () => socket.disconnect();
   }, []);
 
+  console.log(attendancesData?.monthAttendance);
+
   const { attendanceData, notPresentData } = mappedAttendanceData(attendancesData?.monthAttendance || {});
 
   const employeeColumns = useMemo(
@@ -100,7 +102,9 @@ const Dashboard = () => {
           return (
             <div className="flex items-center gap-3">
               {profileImage ? (
-                <img src={profileImage} alt={`${value}'s Profile`} className="w-10 h-10 rounded-full object-cover" />
+                <div className="w-10 h-10 rounded-full overflow-hidden">
+                  <img src={profileImage} alt={`${value}'s Profile`} className="w-full h-full object-cover" />
+                </div>
               ) : (
                 <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-slate-800 text-sm">
                   {value[0]?.toUpperCase() || "?"}
@@ -152,11 +156,11 @@ const Dashboard = () => {
         render: (value) => (
           <span
             className={`${
-              value === "Terlambat" || value === "Pulang Awal" || value === "Tidak Hadir"
+              value === "Terlambat" || value === "Pulang Awal" || value === "Tidak Masuk"
                 ? "bg-red-100 text-red-500"
                 : value === "Istirahat"
                 ? "bg-teal-100 text-teal-600"
-                : value === "Cuti"
+                : value === "Izin Cuti"
                 ? "bg-orange-100 text-orange-500"
                 : value === "Hadir"
                 ? "bg-green-100 text-green-600"

@@ -2,12 +2,13 @@ import { IconArrowLeft, IconArrowRight } from "@tabler/icons-react";
 import React, { useState } from "react";
 import DatePicker from "tailwind-datepicker-react";
 
-const Datepicker = ({ onChange, defaultDate, isDisabled, label, position }) => {
+const Datepicker = ({ onChange, defaultDate, isDisabled, label, style = "py-0.5 mt-3", border = "border border-zinc-300" }) => {
   const [show, setShow] = useState(false);
 
   const handleClose = (state) => {
     setShow(state);
   };
+
   const DatepickerOptions = {
     title: label,
     autoHide: true,
@@ -35,7 +36,7 @@ const Datepicker = ({ onChange, defaultDate, isDisabled, label, position }) => {
       prev: () => <IconArrowLeft />,
       next: () => <IconArrowRight />,
     },
-    datepickerClassNames: position,
+    datepickerClassNames: "mt-5",
     language: "en-GB",
     disabledDates: [],
     weekDays: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
@@ -50,7 +51,7 @@ const Datepicker = ({ onChange, defaultDate, isDisabled, label, position }) => {
   };
 
   return (
-    <div>
+    <div className={`bg-white rounded-xl ${border}  ${style} w-full `}>
       <DatePicker
         value={new Date(defaultDate || "1950-01-01")}
         show={show && !isDisabled}

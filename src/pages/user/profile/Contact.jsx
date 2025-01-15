@@ -58,14 +58,14 @@ const Contact = () => {
   };
 
   return (
-    <Layouts title={"Privacy and Contact Information"} backUrl={"/security"}>
+    <Layouts title={"Informasi Privasi dan Kontak"} backUrl={"/security"}>
       <div className="relative">
         <form className="w-full" onSubmit={handleSubmit} encType="multipart/form-data">
           <div className="w-full mt-12 flex flex-col justify-center items-center py-8">
             <div className="w-full px-6 flex flex-col gap-4">
               <FormInput
                 type="text"
-                label="Residential Address"
+                label="Alamat Rumah"
                 value={profileData.address}
                 onChange={(e) => handleDataChange("address", e.target.value)}
                 required
@@ -74,7 +74,7 @@ const Contact = () => {
 
               <FormInput
                 type="phone"
-                label="Phone Number"
+                label="Nomor Handphone"
                 value={profileData.phoneNumber}
                 onChange={(e) => handleDataChange("phoneNumber", e.target.value)}
                 required
@@ -82,7 +82,7 @@ const Contact = () => {
               />
               <FormInput
                 type="email"
-                label="Email Address"
+                label="Alamat Email"
                 value={profileData.email}
                 onChange={(e) => handleDataChange("email", e.target.value)}
                 required
@@ -90,7 +90,7 @@ const Contact = () => {
               />
               <FormInput
                 type="phone"
-                label="Emergency Contact"
+                label="Kontak Darurat"
                 value={profileData.emergencyContact}
                 onChange={(e) => handleDataChange("emergencyContact", e.target.value)}
                 required
@@ -98,7 +98,7 @@ const Contact = () => {
               />
               <FormInput
                 type="select"
-                label="Bank Name"
+                label="Nama Bank"
                 value={{
                   label: (
                     <div className="flex items-center gap-2">
@@ -115,7 +115,7 @@ const Contact = () => {
               />
               <FormInput
                 type="number"
-                label="Bank Acount Number"
+                label="No. Rekening"
                 value={profileData.bankAccountNumber}
                 onChange={(e) => handleDataChange("bankAccountNumber", e.target.value)}
                 required
@@ -130,7 +130,7 @@ const Contact = () => {
                 className="rounded-full w-full bg-indigo-500 text-white hover:bg-indigo-700 p-3 font-semibold transition-all duration-300 ease-in-out"
                 disabled={loading}
               >
-                Save Changes
+                Simpan Perubahan
               </button>
             </div>
           </div>

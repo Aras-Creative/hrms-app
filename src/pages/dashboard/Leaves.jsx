@@ -80,7 +80,9 @@ const Leaves = () => {
           return (
             <div className="flex items-center gap-3">
               {value.profilePicture && profileImage ? (
-                <img src={profileImage} alt={`${value}'s Profile`} className="w-10 h-10 rounded-full object-cover" />
+                <div className="w-10 h-10 rounded-full overflow-hidden">
+                  <img src={profileImage} alt={`${value}'s Profile`} className="w-full h-full object-cover" />
+                </div>
               ) : (
                 <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-slate-800 text-sm">
                   {value.fullName[0]?.toUpperCase() || "?"}
@@ -219,7 +221,7 @@ const Leaves = () => {
                               ? "bg-red-500"
                               : item.label === "Disetujui"
                               ? "bg-emerald-700"
-                              : item.label === "Ditahan"
+                              : item.label === "Menunggu Konfirmasi"
                               ? "bg-yellow-500"
                               : "bg-blue-500"
                           } w-2 h-2 rounded-full`}

@@ -5,10 +5,8 @@ import {
   IconBriefcase,
   IconDots,
   IconDownload,
-  IconFileImport,
   IconGenderBigender,
   IconGraph,
-  IconGridScan,
   IconPhone,
   IconPlus,
   IconUser,
@@ -118,6 +116,7 @@ const Employee = () => {
   useEffect(() => {
     employeeDataRefetch();
   }, [pageSize, currentPage]);
+
   useEffect(() => {
     if (employeeDataPages) {
       dispatch({ type: "SET_TOTAL_PAGES", payload: employeeDataPages });
@@ -140,9 +139,11 @@ const Employee = () => {
           return (
             <div className="flex items-center gap-3">
               {profileImage ? (
-                <img src={profileImage} alt={`${value}'s Profile`} className="w-10 h-10 rounded-full object-cover" />
+                <div className="w-10 h-10 rounded-full overflow-hidden">
+                  <img src={profileImage} alt={`${value}'s Profile`} className="w-full h-full object-cover" />
+                </div>
               ) : (
-                <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-slate-800 text-sm">
+                <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-slate-800 text-sm">
                   {value?.[0]?.toUpperCase() || "?"}
                 </div>
               )}

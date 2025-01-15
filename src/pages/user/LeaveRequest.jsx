@@ -1,12 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Layouts from "./profile/Layouts";
 import FormInput from "../../components/FormInput";
 import Datepicker from "../../components/Datepicker";
 import FileUpload from "../../components/FileUpload";
 import useFetch from "../../hooks/useFetch";
 import useAuth from "../../hooks/useAuth";
-import { useNavigate } from "react-router-dom";
-import Toast from "../../components/Toast";
 import Snackbar from "../../components/Snackbar";
 
 const LeaveRequest = () => {
@@ -21,7 +19,6 @@ const LeaveRequest = () => {
     text: "",
     show: false,
   });
-  const navigate = useNavigate();
 
   const handleFileUpdate = (files) => {
     setUploadedFiles(files);
@@ -81,24 +78,32 @@ const LeaveRequest = () => {
             onChange={(e) => setLeaveType(e)}
             errors={errors.leaveType}
           />
-          <div className="w-full grid grid-cols-2 gap-4 mt-3 mb-3">
-            <div>
-              <div className="mb-1 px-2">
-                <label className="text-gray-700 text-sm">Tanggal Mulai</label>
-              </div>
-              <div className="bg-white border rounded-xl overflow-hidden">
-                <Datepicker defaultDate={startDate} onChange={setStartDate} />
+          <div className="w-full grid grid-cols-1 gap-6 mt-4 mb-6">
+            {/* Tanggal Mulai */}
+            <div className="relative">
+              <label className="block text-gray-700 text-sm font-medium mb-1 px-2">Tanggal Mulai</label>
+              <div className="relative">
+                <Datepicker
+                  className="w-full mt-1 py-2 px-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  defaultDate={startDate}
+                  onChange={setStartDate}
+                />
               </div>
             </div>
-            <div>
-              <div className="mb-1 px-2">
-                <label className="text-gray-700 text-sm">Tanggal Selesai</label>
-              </div>
-              <div className="bg-white border rounded-xl overflow-hidden">
-                <Datepicker defaultDate={endDate} onChange={setEndDate} />
+
+            {/* Tanggal Selesai */}
+            <div className="relative">
+              <label className="block text-gray-700 text-sm font-medium mb-1 px-2">Tanggal Selesai</label>
+              <div className="relative">
+                <Datepicker
+                  className="w-full mt-1 py-2 px-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  defaultDate={endDate}
+                  onChange={setEndDate}
+                />
               </div>
             </div>
           </div>
+
           <FormInput
             type="textarea"
             height={"36"}

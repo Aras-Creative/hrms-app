@@ -130,18 +130,22 @@ const PersonalInformation = ({ data, refetch }) => {
                 onEdit={isFormEdit.personalInfo}
                 erorr={errors.placeOfBirth}
               />
-              <div className={`flex flex-col gap-1 border-b w-full ${isFormEdit.personalInfo ? "border-zinc-500" : "border-zinc-300"}`}>
+              <div className={`flex relative flex-col gap-1 border-b w-full ${isFormEdit.personalInfo ? "border-zinc-500" : "border-zinc-300"}`}>
                 <label htmlFor="birthDate" className="text-zinc-500 text-sm">
                   Tanggal Lahir
                 </label>
-                <Datepicker
-                  position={"top-30"}
-                  label={"Select Birth Date"}
-                  defaultDate={formData.personalInfo.dateOfBirth}
-                  onChange={(date) => handleBirtDatePick("dateOfBirth")(date)}
-                  isDisabled={!isFormEdit.personalInfo}
-                  erorr={errors.dateOfBirth}
-                />
+                <div className="w-full bottom-0 absolute">
+                  <Datepicker
+                    border="border-none"
+                    style={"p-0"}
+                    position={"top-30"}
+                    label={"Select Birth Date"}
+                    defaultDate={formData.personalInfo.dateOfBirth}
+                    onChange={(date) => handleBirtDatePick("dateOfBirth")(date)}
+                    isDisabled={!isFormEdit.personalInfo}
+                    erorr={errors.dateOfBirth}
+                  />
+                </div>
               </div>
               <FormInput type="text" label="Usia" value={`${calculateAge(formData.personalInfo.dateOfBirth)} Tahun`} onEdit={false} />
               <FormInput

@@ -44,11 +44,10 @@ const GeneralInformation = ({ handleFormInput, handleSelect, handleDatePick, dat
               onChange={handleFormInput("personalData", "placeOfBirth")}
               value={data?.personalData?.placeOfBirth || ""}
             />
-            <div className="flex flex-col w-full">
+            <div className="flex flex-col w-full relative">
               <h1 className="text-slate-800 text-sm">Tanggal Lahir</h1>
-              <div className="mt-2 py-0.5 border rounded-xl border-zinc-300 overflow-hidden bg-white">
+              <div className="absolute top-4 w-full">
                 <Datepicker
-                  position={"top-100"}
                   label={"Tanggal lahir"}
                   defaultDate={data?.personalData?.dateOfBirth || null}
                   onChange={(date) => handleDatePick("personalData")("dateOfBirth")(date)}

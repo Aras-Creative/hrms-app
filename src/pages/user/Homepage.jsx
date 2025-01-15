@@ -14,7 +14,6 @@ import {
   IconClockPlay,
   IconHandClick,
   IconLoader2,
-  IconForbid,
 } from "@tabler/icons-react";
 import { NavLink } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
@@ -27,6 +26,7 @@ import { getAttendanceStats, getProfilePicture } from "../../utils/userUtils";
 import FormInput from "../../components/FormInput";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
 import Forbidden from "../../assets/error/403.webp";
+import { BASE_API_URL } from "../../config";
 
 const Homepage = () => {
   // Hooks
@@ -43,12 +43,10 @@ const Homepage = () => {
 
   // Fetch data
   const lastDay = useMemo(() => getLastDayOfMonth(selectedMonth.value), [selectedMonth.value]);
-  const { responseData: TodayAttendance } = useFetch(`/attendance/today`);
+  const { responseData: TodayAttendance, refetch: AttendanceDataRefetch } = useFetch(`/attendance/today`);
   const { responseData: TodayEvent } = useFetch(`/event`);
   const { responseData: notifications } = useFetch(`/notification/${profile.userId}`);
-  const { responseData: AttendanceData, refetch: AttendanceDataRefetch } = useFetch(
-    `/attendance/${profile?.userId}?startDate=${selectedMonth.value}&endDate=${lastDay}`
-  );
+  const { responseData: AttendanceData } = useFetch(`/attendance/${profile?.userId}?startDate=${selectedMonth.value}&endDate=${lastDay}`);
   const { responseData: ProfilePicture } = useFetch(`/employee/profile-picture/${profile.userId}`);
 
   // Derived Data
@@ -63,7 +61,7 @@ const Homepage = () => {
 
   useEffect(() => {
     const cleanupSocket = initializeSocket(
-      "http://localhost:3000/user",
+      `${BASE_API_URL}user`,
       {
         withCredentials: true,
         transports: ["websocket", "polling"],
@@ -75,7 +73,6 @@ const Homepage = () => {
             ...prevAttendance,
             ...Object.fromEntries(Object.entries(data?.attendance).filter(([key, value]) => value != null)),
           }));
-
           AttendanceDataRefetch();
         },
         notification: () => {
@@ -106,9 +103,10 @@ const Homepage = () => {
     };
     const { success } = await recordAttendance(record);
     if (success) {
+      AttendanceDataRefetch();
       setMarkAttendance(false);
     }
-  }, [currentTime, profile.userId, recordAttendance]);
+  }, [currentTime, profile.userId, recordAttendance, AttendanceDataRefetch]);
 
   const handleAttendance = () => {
     setMarkAttendance(true);
@@ -180,7 +178,7 @@ const Homepage = () => {
 
                   {/* Attendance Sections */}
                   <div className="mt-4 pl-3 w-full">
-                    {TodayEvent && TodayEvent?.type === "holiday" ? (
+                    {TodayEvent && TodayEvent?.type === "Holiday" ? (
                       <div className="flex flex-col items-center w-full justify-center pb-4 mt-12">
                         <img src={RestDayIMG} alt="Rest Day" className="w-72 mb-4" />
                         <div className="text-center">
@@ -281,35 +279,38 @@ const Homepage = () => {
                       </>
                     )}
                   </div>
-                  <button
-                    onClick={handleAttendance}
-                    disabled={todayAttendance?.clockOut}
-                    className={`w-full bg-gradient-to-br from-indigo-600 to-indigo-500 text-white border border-zinc-200 px-5 flex justify-between items-center shadow py-3 mt-6 rounded-xl ${
-                      todayAttendance?.clockOut ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    <div className="flex flex-col text-start">
-                      <h1 className="text-lg font-semibold">
-                        {(() => {
-                          if (todayAttendance?.clockIn && !todayAttendance?.breakOut) {
-                            return "Beristirahat";
-                          } else if (todayAttendance?.breakOut && !todayAttendance?.breakIn) {
-                            return "Selesai Istirahat";
-                          } else if (todayAttendance?.breakIn && !todayAttendance?.clockOut) {
-                            return "Pulang";
-                          } else if ((todayAttendance?.clockIn, todayAttendance?.clockOut, todayAttendance?.breakIn, todayAttendance?.breakOut)) {
-                            return "Selesai";
-                          } else {
-                            return "Masuk";
-                          }
-                        })()}
-                      </h1>
 
-                      <p className="text-xs">Jam {currentTime.format("HH:mm")}</p>
-                    </div>
+                  {!TodayEvent && (
+                    <button
+                      onClick={handleAttendance}
+                      disabled={todayAttendance?.clockOut}
+                      className={`w-full bg-gradient-to-br from-indigo-600 to-indigo-500 text-white border border-zinc-200 px-5 flex justify-between items-center shadow py-3 mt-6 rounded-xl ${
+                        todayAttendance?.clockOut ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      <div className="flex flex-col text-start">
+                        <h1 className="text-lg font-semibold">
+                          {(() => {
+                            if (todayAttendance?.clockIn && !todayAttendance?.breakOut) {
+                              return "Beristirahat";
+                            } else if (todayAttendance?.breakOut && !todayAttendance?.breakIn) {
+                              return "Selesai Istirahat";
+                            } else if (todayAttendance?.breakIn && !todayAttendance?.clockOut) {
+                              return "Pulang";
+                            } else if ((todayAttendance?.clockIn, todayAttendance?.clockOut, todayAttendance?.breakIn, todayAttendance?.breakOut)) {
+                              return "Selesai";
+                            } else {
+                              return "Masuk";
+                            }
+                          })()}
+                        </h1>
 
-                    <IconClockPlay />
-                  </button>
+                        <p className="text-xs">Jam {currentTime.format("HH:mm")}</p>
+                      </div>
+
+                      <IconClockPlay />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

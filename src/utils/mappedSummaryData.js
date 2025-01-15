@@ -1,12 +1,9 @@
 export const mappedLeavesData = (stats) => {
-  // Ambil data status dari parameter stats
   const data = stats || [];
-
-  // Hitung jumlah status menggunakan reduce
   const summary = data.reduce(
     (acc, item) => {
-      if (item.status === "approved") acc.Approved++;
-      else if (item.status === "rejected") acc.Rejected++;
+      if (item.status === "disetujui") acc.Approved++;
+      else if (item.status === "ditolak") acc.Rejected++;
       else if (item.status === "pending") acc.Pending++;
       acc.Total++;
       return acc;
@@ -21,7 +18,7 @@ export const mappedLeavesData = (stats) => {
         value: summary.Total,
       },
       {
-        label: "Ditahan",
+        label: "Menunggu Konfirmasi",
         value: summary.Pending,
       },
       {
@@ -39,21 +36,21 @@ export const mappedLeavesData = (stats) => {
 export const mappedAttendanceData = (stats) => {
   const todayStats = stats?.todayStats || {
     totalEmployees: 0,
-    present: "0",
-    absent: "0",
-    leave: "0",
-    late: "0",
-    early_clock_out: "0",
+    hadir: "0",
+    tidak_masuk: "0",
+    izin_cuti: "0",
+    terlambat: "0",
+    pulang_awal: "0",
     invalid: "0",
   };
 
-  const yesterdayStats = stats?.yesterdayStats?.[0] || {
+  const yesterdayStats = stats?.yesterdayStats || {
     totalEmployees: 0,
-    present: "0",
-    absent: "0",
-    leave: "0",
-    late: "0",
-    early_clock_out: "0",
+    hadir: "0",
+    tidak_masuk: "0",
+    izin_cuti: "0",
+    terlambat: "0",
+    pulang_awal: "0",
     invalid: "0",
   };
 
@@ -66,24 +63,24 @@ export const mappedAttendanceData = (stats) => {
       {
         label: "Tepat Waktu",
         value: toNumber(todayStats.hadir),
-        change: calculateChange("present"),
+        change: calculateChange("hadir"),
       },
       {
         label: "Terlambat",
         value: toNumber(todayStats.terlambat),
-        change: calculateChange("late"),
+        change: calculateChange("terlambat"),
       },
       {
         label: "Pulang Lebih Awal",
         value: toNumber(todayStats["pulang_awal"]),
-        change: calculateChange("early clock out"),
+        change: calculateChange("pulang_awal"),
       },
     ],
     notPresentData: [
       {
         label: "Absen",
         value: toNumber(todayStats["tidak_masuk"]),
-        change: calculateChange("absent"),
+        change: calculateChange("tidak_masuk"),
       },
       {
         label: "Tidak Valid",
@@ -92,8 +89,8 @@ export const mappedAttendanceData = (stats) => {
       },
       {
         label: "Izin/Cuti",
-        value: toNumber(todayStats.libur),
-        change: calculateChange("leave"),
+        value: toNumber(todayStats["izin_cuti"]),
+        change: calculateChange("izin_cuti"),
       },
     ],
   };

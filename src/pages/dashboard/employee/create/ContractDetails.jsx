@@ -62,9 +62,9 @@ const ContractDetails = ({ handleChange, handleSelect, handleDatePick, data, set
       <div className="w-full mt-4">
         <h1 className="text-slate-800 font-semibold">Ringkasan Kontrak</h1>
         <div className="grid grid-cols-2 gap-3 mb-3 w-full mt-3">
-          <div className="flex flex-col w-full">
+          <div className="flex flex-col w-full relative mb-3">
             <h1 className="text-slate-800 text-sm">Tanggal Mulai</h1>
-            <div className="mt-2 py-0.5 border rounded-xl border-zinc-300 overflow-hidden bg-white">
+            <div className="absolute top-4 w-full">
               <Datepicker
                 position={"top-30"}
                 label={"Select Start Date"}
@@ -74,9 +74,9 @@ const ContractDetails = ({ handleChange, handleSelect, handleDatePick, data, set
             </div>
           </div>
 
-          <div className="flex flex-col w-full">
+          <div className="flex flex-col w-full relative mb-3">
             <h1 className="text-slate-800 text-sm">Tanggal Berakhir</h1>
-            <div className="mt-2 py-0.5 border rounded-xl border-zinc-300 overflow-hidden bg-white">
+            <div className="absolute top-4 w-full">
               <Datepicker
                 position={"top-30"}
                 label={"Select End Date"}
@@ -87,7 +87,7 @@ const ContractDetails = ({ handleChange, handleSelect, handleDatePick, data, set
           </div>
         </div>
 
-        <div className="flex justify-between items-center mt-6">
+        <div className="flex justify-between items-center mt-16">
           <h1 className="text-slate-800 font-semibold">Working Scope</h1>
           <button
             type="button"

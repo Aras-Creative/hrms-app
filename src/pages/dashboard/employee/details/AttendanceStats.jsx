@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { IconArrowLeft, IconArrowRight } from "@tabler/icons-react";
 import useFetch from "../../../../hooks/useFetch";
+import { Loading } from "../../../../components/Preloaders";
 
 // Constants
 const STAT_TYPES = [
@@ -33,7 +34,7 @@ const calculateStats = (data) => {
   };
   data.forEach((entry) => {
     switch (entry.status) {
-      case "Cuti":
+      case "Izin Cuti":
         stats.dayOff++;
         break;
       case "Terlambat":
@@ -58,7 +59,7 @@ const StatCard = ({ label, current, previous }) => {
   const diffColor = diff < 0 ? "text-red-500" : "text-blue-500";
 
   return (
-    <div className={`w-1/5 border-zinc-200 pl-4 ${label === "Day Off" ? "" : "border-l"} flex flex-col justify-center items-start`}>
+    <div className={`w-1/5 border-zinc-200 pl-4 ${label === "Izin Cuti" ? "" : "border-l"} flex flex-col justify-center items-start`}>
       <h1 className="text-zinc-400 text-xs font-semibold">{label}</h1>
       <h1 className="text-2xl text-slate-800 font-bold">{current}</h1>
       <div className="text-start">
@@ -137,7 +138,7 @@ const AttendanceStats = ({ sendAttendanceData, periode }) => {
   const lastMonthStats = calculateStats(attendancesData?.attendanceStats?.lastMonthData);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <Loading />;
   }
 
   return (

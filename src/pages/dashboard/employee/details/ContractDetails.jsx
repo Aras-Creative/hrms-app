@@ -353,9 +353,9 @@ const ContractDetails = ({ data }) => {
           <Modal.Body>
             <div className="w-full flex flex-col items-center p-4">
               <div className="grid grid-cols-2 gap-4 w-full">
-                <div className="w-full">
-                  <h1 className="mb-2 text-sm">Tanggal Mulai</h1>
-                  <div className="bg-white border rounded-lg border-zinc-400">
+                <div className=" w-full relative">
+                  <h1 className="text-slate-800 text-sm">Tanggal Mulai</h1>
+                  <div className="absolute top-4 w-full">
                     <Datepicker
                       position={"top-30"}
                       label={"Select Start Date"}
@@ -364,9 +364,9 @@ const ContractDetails = ({ data }) => {
                     />
                   </div>
                 </div>
-                <div className="w-full">
-                  <h1 className="mb-2 text-sm">Tanggal Berakhir</h1>
-                  <div className="bg-white border rounded-lg border-zinc-400">
+                <div className=" w-full relative">
+                  <h1 className="text-slate-800 text-sm">Tanggal Berakhir</h1>
+                  <div className="absolute top-4 w-full">
                     <Datepicker
                       defaultDate={formData.contract.endDate}
                       position={""}
@@ -376,15 +376,15 @@ const ContractDetails = ({ data }) => {
                   </div>
                 </div>
               </div>
-              <div className="mt-4 w-full">
-                <FormInput
-                  type="select"
-                  label="Job Role"
-                  value={{ label: formData?.contract?.jobRole?.title, value: formData?.contract?.jobRole?.id }}
-                  options={state.jobRoleOptions}
-                  onChange={handleSelectChange("contract", "jobRole")}
-                />
-              </div>
+            </div>
+            <div className="mt-16 px-4 w-full">
+              <FormInput
+                type="select"
+                label="Job Role"
+                value={{ label: formData?.contract?.jobRole?.title, value: formData?.contract?.jobRole?.id }}
+                options={state.jobRoleOptions}
+                onChange={handleSelectChange("contract", "jobRole")}
+              />
             </div>
           </Modal.Body>
           <Modal.Footer>

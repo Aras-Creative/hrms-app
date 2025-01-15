@@ -167,25 +167,24 @@ const ProfileDetails = () => {
                 required
               />
             </div>
-            <div className="mb-4">
-              <label htmlFor="dateOfBirth" className="text-sm block px-2 mb-2">
+            <div className="mb-4 relative">
+              <label htmlFor="dateOfBirth" className="text-sm block mb-2 absolute -top-4 mt-4 left-2 bg-white px-1">
                 Tanggal Lahir
               </label>
-              <div className="flex items-center gap-3 rounded-xl border border-gray-300 focus-within:border-indigo-500 px-2 py-0.5 mt-1">
-                <Datepicker position={"top-20"} label={"Select Birth Date"} defaultDate={profileData.dateOfBirth} onChange={handleDatePick} />
+              <div className="absolute w-full mt-4">
+                <Datepicker label={"Select Birth Date"} defaultDate={profileData.dateOfBirth} onChange={handleDatePick} />
               </div>
             </div>
-          </div>
 
-          {/* Submit Button */}
-          <div className="w-full px-6">
-            <button
-              type="submit"
-              className="rounded-full w-full bg-indigo-500 text-white hover:bg-indigo-700 p-3 font-semibold transition-all duration-300 ease-in-out"
-              disabled={loading}
-            >
-              Simpan Perubahan
-            </button>
+            <div className="w-full px-6 mt-28">
+              <button
+                type="submit"
+                className="rounded-full w-full bg-indigo-500 text-white hover:bg-indigo-700 p-3 font-semibold transition-all duration-300 ease-in-out"
+                disabled={loading}
+              >
+                Simpan Perubahan
+              </button>
+            </div>
           </div>
         </div>
       </form>

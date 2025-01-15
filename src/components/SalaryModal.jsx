@@ -483,7 +483,7 @@ const Statistics = ({ data }) => {
   const stats = [
     { label: "Kehadiran", value: 0, max: 0 },
     { label: "Pulang Awal", value: 0, max: 0 },
-    { label: "Cuti", value: 0, max: 0 },
+    { label: "Izin Cuti", value: 0, max: 0 },
     { label: "Terlambat", value: 0, max: 0 },
     { label: "Tidak Hadir", value: 0, max: 0 },
   ];

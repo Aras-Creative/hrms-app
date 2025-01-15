@@ -14,7 +14,6 @@ export const validateHeaders = (headers, expectedHeaders) => {
     };
   }
 
-  // Cek isi header
   headers.forEach((header, index) => {
     if (header.toLowerCase() !== expectedHeaders[index].toLowerCase()) {
       errors.push({

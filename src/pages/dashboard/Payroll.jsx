@@ -6,7 +6,6 @@ import {
   IconBrandCashapp,
   IconCash,
   IconCashOff,
-  IconCheck,
   IconChecklist,
   IconDots,
   IconMail,
@@ -23,6 +22,7 @@ import { formatCurrency } from "../../utils/formatCurrency";
 import { STORAGE_URL } from "../../config";
 import { InternalServerError, NotFound } from "../../components/Errors";
 import { Loading } from "../../components/Preloaders";
+import Toast from "../../components/Toast";
 
 const currentDate = new Date();
 const MAX_MONTH = currentDate.getMonth() + 1;
@@ -43,6 +43,7 @@ const Payroll = () => {
   const [periode, setPeriode] = useState(getInitialPeriode());
   const [modalOpen, setModalOpen] = useState({ isOpen: false, employeeId: "" });
   const [selectedUserIds, setSelectedUserIds] = useState([]);
+  const [toast, setToast] = useState({ type: "", message: "" });
 
   const handlePeriodeChange = useCallback((action) => {
     setPeriode((prevPeriode) => {
@@ -92,7 +93,7 @@ const Payroll = () => {
   }, [employeeData]);
 
   const allHavePayrolls = useMemo(() => {
-    return employeeData?.every((employee) => employee.payrolls !== null);
+    return employeeData?.every((employee) => employee?.payrolls !== null && employee?.payrolls?.status === "Paid");
   }, [employeeData]);
 
   const { submitData: distributePayslip } = useFetch("/employee/payroll/distribute", { method: "POST" });
@@ -101,7 +102,11 @@ const Payroll = () => {
   const handleDistributePayslip = useCallback(async () => {
     if (allHavePayrolls) {
       const { success, error } = await distributePayslip(formattedEmployees);
-      // Handle success or error as needed
+      if (success) {
+        setToast({ type: "success", message: "Payslip distributed successfully" });
+      } else if (error) {
+        setToast({ type: "error", message: "Failed to distribute payslip" });
+      }
     }
   }, [allHavePayrolls, distributePayslip, formattedEmployees]);
 
@@ -140,7 +145,9 @@ const Payroll = () => {
               </label>
             </div>
             {profileImage ? (
-              <img src={profileImage} alt={`${employee?.fullName}'s Profile`} className="w-10 h-10 rounded-full object-cover" />
+              <div className="w-10 h-10 rounded-full overflow-hidden">
+                <img src={profileImage} alt={`${employee?.fullName}'s Profile`} className="w-full h-full object-cover" />
+              </div>
             ) : (
               <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-slate-800 text-sm">
                 {employee?.fullName?.[0]?.toUpperCase() || "?"}
@@ -307,11 +314,10 @@ const Payroll = () => {
           ) : (
             <>
               <Table title="Employee Table" icon="fa-users" columns={employeeColumns} data={employeeData || []} />
-
-              {/* <Pagination totalPages={totalPages} currentPage={currentPage} handlePageChange={handlePageChange} /> */}
             </>
           )}
         </div>
+        {toast.message !== "" && <Toast text={toast.message} type={toast.type} onClick={() => setToast({ type: "", message: "" })} />}
       </DashboardLayouts>
 
       {modalOpen.isOpen && (

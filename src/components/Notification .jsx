@@ -1,5 +1,5 @@
-import { IconAlertCircleFilled, IconBell, IconMail, IconX } from "@tabler/icons-react";
-import React, { useEffect } from "react";
+import { IconAlertCircleFilled, IconBell } from "@tabler/icons-react";
+import React from "react";
 import useFetch from "../hooks/useFetch";
 
 const Notification = ({ onClose }) => {

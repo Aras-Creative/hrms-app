@@ -219,7 +219,8 @@ export const attendanceFilter = [
   { label: "Hadir", value: "Hadir" },
   { label: "Istirahat", value: "Istirahat" },
   { label: "Pulang Awal", value: "Pulang Awal" },
-  { label: "Cuti/Izin", value: "Cuti" },
+  { label: "Cuti/Izin", value: "Izin Cuti" },
+  { label: "Tidak Masuk", value: "Tidak Masuk" },
 ];
 
 export const statusOptions = [

@@ -57,8 +57,8 @@ const TermsCondition = () => {
             <ul className="list-inside">
               <li>Menyalahgunakan Aplikasi untuk tujuan yang melanggar hukum atau melanggar hak orang lain.</li>
               <li>
-                Mendistribusikan, menyalin, menduplikasi, menjual, atau mengeksploitasi bagian mana pun dari Aplikasi tanpa izin tertulis dari [Nama
-                Perusahaan].
+                Mendistribusikan, menyalin, menduplikasi, menjual, atau mengeksploitasi bagian mana pun dari Aplikasi tanpa izin tertulis dari CV Aras
+                Creative.
               </li>
               <li>Menggunakan Aplikasi untuk tujuan yang tidak sah atau tidak sah secara hukum.</li>
             </ul>
