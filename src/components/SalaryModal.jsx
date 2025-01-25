@@ -15,9 +15,15 @@ import React, { useEffect, useState } from "react";
 import useFetch from "../hooks/useFetch";
 import FormInput from "./FormInput";
 import { STORAGE_URL } from "../config";
+import CircularProgressBar from "./CircularProgressBar";
+import Toast from "./Toast";
 
 const SalaryModal = ({ employeeId, handleClose, isVisible, periode, refetch }) => {
   const fetchUrl = `/employee/${employeeId}/salary`;
+  const [toast, setToast] = useState({
+    type: "",
+    text: "",
+  });
   const { responseData: data = {}, loading } = useFetch(fetchUrl);
   const [newAdjustment, setNewAdjustment] = useState(false);
   const [salaryAdjustment, setSalaryAdjustment] = useState({
@@ -33,10 +39,10 @@ const SalaryModal = ({ employeeId, handleClose, isVisible, periode, refetch }) =
     if (data) {
       setSalaryAdjustment({
         salary: {
-          basicSalary: parseFloat(data.salary.basicSalary).toFixed(0) || 0,
-          totalSalary: data.salary.totalSalary || 0,
+          basicSalary: parseFloat(data?.salary?.basicSalary).toFixed(0) || 0,
+          totalSalary: data?.salary?.totalSalary || 0,
         },
-        adjustment: data.adjustments || [],
+        adjustment: data?.adjustments || [],
         removed: "",
       });
     }
@@ -157,12 +163,12 @@ const SalaryModal = ({ employeeId, handleClose, isVisible, periode, refetch }) =
   );
 
   const handleSubmit = async () => {
-    const { success, error, data } = await postSalary(salaryAdjustment);
+    const { success, error } = await postSalary(salaryAdjustment);
     if (success) {
       handleCloseModal();
       refetch();
     } else {
-      console.log(error);
+      setToast({ type: "error", text: error.message });
     }
   };
 
@@ -173,7 +179,7 @@ const SalaryModal = ({ employeeId, handleClose, isVisible, periode, refetch }) =
         onClick={handleCloseModal}
       ></div>
       <div
-        className={`relative bg-white rounded-l-xl h-screen overflow-y-scroll scrollbar-none shadow-lg 2xl:w-[70%] xl:w-[95%] lg:w-[100%] md:w-[100%] sm:w-[100%] ${
+        className={`relative bg-white rounded-l-xl h-screen overflow-y-scroll scrollbar-none shadow-lg 2xl:w-[70%] xl:w-[100%] lg:w-[100%] md:w-[100%] sm:w-[100%] ${
           isVisible ? "animate-slideIn" : "animate-slideOut"
         }`}
       >
@@ -197,12 +203,12 @@ const SalaryModal = ({ employeeId, handleClose, isVisible, periode, refetch }) =
               <h1 className="text-lg font-bold">{data?.fullName}</h1>
               <div className="flex items-center gap-10">
                 <div className="flex flex-col items-start">
-                  <span className="text-sm text-zinc-500 flex gap-1">Employee ID</span>
+                  <span className="text-sm text-zinc-500 flex gap-1">ID Karyawan</span>
                   <h1 className="text-sm font-semibold">{data?.employeeId}</h1>
                 </div>
 
                 <div className="flex flex-col items-start">
-                  <span className="text-sm text-zinc-500 flex gap-1">Position</span>
+                  <span className="text-sm text-zinc-500 flex gap-1">Posisi/Jabatan</span>
                   <h1 className="text-sm font-semibold">{data?.jobRole?.jobRoleTitle}</h1>
                 </div>
               </div>
@@ -245,7 +251,7 @@ const SalaryModal = ({ employeeId, handleClose, isVisible, periode, refetch }) =
                       }}
                       options={[
                         { label: "Tunjangan", value: "allowance" },
-                        { label: "Pengurangan", value: "deduction" },
+                        { label: "Potongan", value: "deduction" },
                       ]}
                       placeholder="Select Type"
                       className="flex-1 text-sm"
@@ -331,7 +337,7 @@ const SalaryModal = ({ employeeId, handleClose, isVisible, periode, refetch }) =
               </p>
             </div>
             <div className="w-full mt-8 mb-6">
-              <h1 className="text-lg font-semibold">Pengurangan</h1>
+              <h1 className="text-lg font-semibold">Potongan</h1>
             </div>
             <div className="grid grid-cols-2 w-full gap-6">
               {salaryAdjustment?.adjustment?.length > 0 &&
@@ -460,6 +466,7 @@ const SalaryModal = ({ employeeId, handleClose, isVisible, periode, refetch }) =
           </div>
         </div>
       </div>
+      {toast.text !== "" && <Toast text={toast.text} type={toast.type || "error"} onClick={() => setToast({ text: "", type: "" })} />}
     </div>
   );
 };
@@ -481,17 +488,21 @@ const ProgressBar = ({ label, value, max }) => {
 
 const Statistics = ({ data }) => {
   const stats = [
-    { label: "Kehadiran", value: 0, max: 0 },
+    { label: "Hadir", value: 0, max: 0 },
     { label: "Pulang Awal", value: 0, max: 0 },
     { label: "Izin Cuti", value: 0, max: 0 },
     { label: "Terlambat", value: 0, max: 0 },
-    { label: "Tidak Hadir", value: 0, max: 0 },
+    { label: "Tidak Masuk", value: 0, max: 0 },
+    { label: "Keterlambatan", value: 0, max: 0 },
   ];
 
   data?.forEach((entry) => {
     const statusIndex = stats.findIndex((stat) => stat.label === entry.status);
     if (statusIndex !== -1) {
       stats[statusIndex].value += 1;
+    }
+    if (entry.lateness) {
+      stats.find((stat) => stat.label === "Keterlambatan").value += entry.lateness;
     }
   });
 
@@ -501,14 +512,35 @@ const Statistics = ({ data }) => {
     stat.max = totalAttendance;
   });
 
+  const latenessPercentage = Math.min(Math.floor((stats[5].value / 30) * 100), 100);
+
   return (
-    <div className="p-6 w-1/3">
-      <div className="space-y-2">
-        {stats.map((stat, index) => (
-          <ProgressBar key={index} label={stat.label} value={stat.value} max={stat.max} />
-        ))}
+    <>
+      <div className="p-6 w-2/3">
+        <div className="space-y-2">
+          {stats
+            .filter((stat) => stat.label !== "Keterlambatan")
+            .map((stat, index) => (
+              <ProgressBar key={index} label={stat.label} value={stat.value} max={stat.max} />
+            ))}
+        </div>
       </div>
-    </div>
+      <div className="flex flex-col items-center">
+        <p className="text-sm text-zinc-900">Keterlambatan</p>
+
+        <CircularProgressBar
+          textSize={"text-lg"}
+          bgTextColor={"none"}
+          strokeColor="stroke-blue-500"
+          textColor="text-slate-800"
+          radius={40}
+          strokeWidth={13}
+          text={`${Math.min(Math.floor((stats[5].value / 30) * 100), 100)}%`}
+          progress={latenessPercentage}
+        />
+      </div>
+    </>
   );
 };
+
 export default SalaryModal;

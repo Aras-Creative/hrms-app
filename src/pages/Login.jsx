@@ -1,13 +1,31 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import useFetch from "../hooks/useFetch";
-import { NavLink, useNavigate } from "react-router-dom";
-import { IconArrowLeft, IconEye, IconEyeOff } from "@tabler/icons-react";
+import { NavLink } from "react-router-dom";
+import { IconEye, IconEyeOff } from "@tabler/icons-react";
 import useAuth from "../hooks/useAuth";
+import FingerprintJS from "@fingerprintjs/fingerprintjs";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({ identifier: "", password: "" });
+  const [formData, setFormData] = useState({ identifier: "", password: "", fingerprint: "" });
   const { login } = useAuth();
+
+  useEffect(() => {
+    const loadFingerprint = async () => {
+      let fingerprint = localStorage.getItem("fingerprint");
+      if (!fingerprint) {
+        const fp = await FingerprintJS.load();
+        const result = await fp.get();
+        fingerprint = result.visitorId;
+        localStorage.setItem("fingerprint", fingerprint);
+      }
+      setFormData((prevState) => ({
+        ...prevState,
+        fingerprint: fingerprint,
+      }));
+    };
+    loadFingerprint();
+  }, []);
 
   const { submitData: LoginPost, loading: LoginLoading, error: LoginError } = useFetch("/auth/login", { method: "POST" });
 
@@ -27,10 +45,7 @@ const Login = () => {
     <div className="min-h-screen flex flex-col items-center bg-white max-w-screen-sm mx-auto">
       <div className="w-full mt-0 rounded-lg p-6">
         <form onSubmit={handleSubmit}>
-          <div className="mb-24 flex items-center justify-between">
-            <button type="button" className="bg-white text-slate-800">
-              <IconArrowLeft />
-            </button>
+          <div className="mb-24 flex items-center justify-end">
             <img src="/image/sekantor-logo.png" className="w-24" alt="logo" />
           </div>
           <h1 className="mb-2 text-lg font-bold text-zinc-700">Selamat datang!👋</h1>
@@ -88,7 +103,7 @@ const Login = () => {
             </button>
             <div className="w-full items-center gap-2 flex justify-center mt-3">
               <p className="text-sm">Belum punya akun?</p>
-              <NavLink to={"/auth/sigin"} className={"text-sm hover:underline text-indigo-500"}>
+              <NavLink to={"#"} className={"text-sm hover:underline text-indigo-500"}>
                 Hubungi Administrator
               </NavLink>
             </div>

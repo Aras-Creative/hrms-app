@@ -127,12 +127,12 @@ const JobRole = () => {
       },
       {
         key: "jobRoleTitle",
-        label: "Job Role",
+        label: "Posisi/Jabatan",
         icon: <IconBriefcase size={20} />,
       },
       {
         key: "employees",
-        label: "Employees",
+        label: "Karyawan",
         icon: <IconBriefcase size={20} />,
         render: (value) => renderEmployeeAvatars(value),
       },
@@ -200,7 +200,10 @@ const JobRole = () => {
                   { label: "100 Job Roles", value: 100 },
                 ]}
                 value={{ label: `${pageSize} Job Roles`, value: pageSize }}
-                onChange={(e) => setPageSize(e.value)}
+                onChange={(e) => {
+                  setPageSize(e.value);
+                  setCurrentPage(1);
+                }}
               />
               <button
                 onClick={() => dispatch({ type: "TOGGLE_MODAL" })}

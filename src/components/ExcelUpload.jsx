@@ -2,19 +2,17 @@ import React, { useState } from "react";
 import * as XLSX from "xlsx";
 import { IconFileImport, IconFileUpload, IconTrash, IconX } from "@tabler/icons-react";
 import useFetch from "../hooks/useFetch";
-import { processExcelData, validateData, validateHeaders } from "../utils/excelValidations";
+import { validateHeaders } from "../utils/excelValidations";
 import Toast from "./Toast";
 
-const ExcelUpload = () => {
+const ExcelUpload = ({ expectedHeaders, postUrl, columns, validate }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [excelData, setExcelData] = useState([]);
   const [fileName, setFileName] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [headerValidation, setHeaderValidation] = useState(null);
   const [toast, setToast] = useState({ text: "", type: "" });
-
-  const isValidDate = (cell) => typeof cell === "number" && !isNaN(cell);
+  const excelColumns = columns(excelData);
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -52,27 +50,29 @@ const ExcelUpload = () => {
     reader.readAsArrayBuffer(file);
   };
 
-  const { submitData: uploadFile } = useFetch("/document/employee", { method: "POST" });
-  const expectedHeaders = ["No", "Nama", "Bagian", "Tempat Lahir", "Tanggal Lahir", "No KTP", "Alamat"];
+  const { submitData: uploadFile, loading } = useFetch(postUrl, { method: "POST" });
 
   const handleUpload = async () => {
-    const headerValidation = validateHeaders(excelData[0], expectedHeaders);
-    if (headerValidation) {
-      setHeaderValidation(headerValidation.errors);
-      setToast({ text: headerValidation.error, type: "error" });
+    if (expectedHeaders && expectedHeaders.length > 0) {
+      const headerValidation = validateHeaders(excelData[0], expectedHeaders);
+      if (headerValidation) {
+        setHeaderValidation(headerValidation.errors);
+        setToast({ text: headerValidation.error, type: "error" });
+        return;
+      }
+    }
+
+    const { data, errors } = validate(excelData);
+    if (errors) {
+      setToast({ type: "error", text: "Data tidak valid atau ada kesalahan dalam data" });
       return;
     }
-    const processedData = processExcelData(excelData);
-    const dataValidation = validateData(processedData);
-    if (dataValidation) {
-      setToast({ type: "error", text: "Data tidak valid" });
-      return;
-    }
-    const data = { data: processedData };
+
     try {
       const { success, error } = await uploadFile(data);
       if (success) {
         setToast({ type: "success", text: "File berhasil diunggah." });
+        setIsModalOpen(false);
       } else {
         setToast({ type: "error", text: "Error saat mengimport file" });
       }
@@ -130,41 +130,63 @@ const ExcelUpload = () => {
                 <table className="w-full border-collapse text-sm">
                   <thead>
                     <tr>
-                      {expectedHeaders.map((header, index) => {
-                        const receivedHeader = excelData[0][index];
-                        const error = headerValidation?.find((err) => err.index === index);
-                        return (
-                          <th key={index} className={`border px-4 py-2 ${error ? "bg-red-100 text-red-600 border-red-400" : ""} hover:bg-yellow-50`}>
-                            <div className="font-semibold">{receivedHeader}</div>
-                            {error && (
-                              <div className="text-xs text-red-500 mt-2">
-                                <span className="block">
-                                  Diharapkan: <strong>{error.expected}</strong>
-                                </span>
-                              </div>
-                            )}
-                          </th>
-                        );
-                      })}
+                      {!expectedHeaders || expectedHeaders.length === 0
+                        ? excelData[0].map((receivedHeader, index) => {
+                            const error = headerValidation?.find((err) => err.index === index);
+                            return (
+                              <th
+                                key={index}
+                                className={`border px-4 py-2 ${error ? "bg-red-100 text-red-600 border-red-400" : ""} hover:bg-yellow-50`}
+                              >
+                                <div className="font-semibold">{receivedHeader}</div>
+                                {error && (
+                                  <div className="text-xs text-red-500 mt-2">
+                                    <span className="block">
+                                      Diharapkan: <strong>{error.expected}</strong>
+                                    </span>
+                                  </div>
+                                )}
+                              </th>
+                            );
+                          })
+                        : expectedHeaders.map((header, index) => {
+                            const receivedHeader = excelData[0][index];
+                            const error = headerValidation?.find((err) => err.index === index);
+                            return (
+                              <th
+                                key={index}
+                                className={`border px-4 py-2 ${error ? "bg-red-100 text-red-600 border-red-400" : ""} hover:bg-yellow-50`}
+                              >
+                                <div className="font-semibold">{receivedHeader}</div>
+                                {error && (
+                                  <div className="text-xs text-red-500 mt-2">
+                                    <span className="block">
+                                      Diharapkan: <strong>{error.expected}</strong>
+                                    </span>
+                                  </div>
+                                )}
+                              </th>
+                            );
+                          })}
                     </tr>
                   </thead>
                   <tbody>
-                    {excelData.slice(1).map((row, rowIndex) => (
-                      <tr key={rowIndex}>
-                        {row.map((cell, cellIndex) => {
-                          const displayValue = isValidDate(cell)
-                            ? new Date(Math.round((cell - 25569) * 864e5)).getFullYear() > 1900
-                              ? new Date(Math.round((cell - 25569) * 864e5)).toLocaleDateString("en-CA")
-                              : cell
-                            : cell;
-                          return (
-                            <td key={cellIndex} className="border px-2 py-1 text-center">
-                              {displayValue}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
+                    {excelData
+                      .slice(1)
+                      .filter((row) => row.some((cell) => cell !== "" && cell != null))
+                      .map((row, rowIndex) => (
+                        <tr key={rowIndex}>
+                          {excelColumns.map((column, colIndex) => {
+                            const cellValue = row[colIndex];
+                            const displayValue = column.render(cellValue, row);
+                            return (
+                              <td key={colIndex} className="border px-2 py-1 text-center">
+                                {displayValue}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
               </div>
@@ -176,12 +198,12 @@ const ExcelUpload = () => {
               </button>
               <button
                 onClick={handleUpload}
-                disabled={!fileName || isLoading}
+                disabled={!fileName || loading}
                 className={`px-4 py-2 rounded-md text-white ${
-                  !fileName || isLoading ? "bg-gray-400 cursor-not-allowed" : "bg-emerald-700 hover:bg-emerald-800"
+                  !fileName || loading ? "bg-gray-400 cursor-not-allowed" : "bg-emerald-700 hover:bg-emerald-800"
                 }`}
               >
-                {isLoading ? "Uploading..." : "Upload"}
+                {loading ? "Uploading..." : "Upload"}
               </button>
             </div>
           </div>

@@ -36,7 +36,7 @@ const ContractDetails = ({ data }) => {
   const { updateData } = useFetch(`/employee/contract/${employeeId}/update`, { method: "POST" });
   const [toast, setToast] = useState({ text: "", type: "" });
   const [modalOpen, setModalOpen] = useState({ type: "" });
-  const { updateData: extendContract } = useFetch(`/employee/contract/${employeeId}/extends`, { method: "PUT" });
+  const { updateData: extendContract } = useFetch(`/employee/contract/extends`, { method: "PUT" });
   const { deleteData: terminateContract } = useFetch(`/employee/contract/${employeeId}/terminate`, { method: "DELETE" });
 
   const [isEditing, setIsEditing] = useState({ contract: false, benefits: false, workingScopes: false });
@@ -86,9 +86,11 @@ const ContractDetails = ({ data }) => {
       startDate: formData.contract.startDate,
       endDate: formData.contract.endDate,
       jobRole: formData.contract.jobRole,
+      employeeId,
     };
+
     const { success, data, error } = await extendContract(contractData);
-    setToast({ text: success ? data.message : error || "An error occurred", type: success ? "success" : "error " });
+    setToast({ text: success ? data.message : error || "An error occurred", type: success ? "success" : "error" });
     setModalOpen({ type: "" });
   };
 
@@ -96,7 +98,7 @@ const ContractDetails = ({ data }) => {
     setFormData((prev) => {
       const updatedForm = { ...prev };
       if (formName === "contract") {
-        updatedForm[formName][field] = field === "jobrole" ? { title: selectedOption.label, id: selectedOption.value } : selectedOption.value;
+        updatedForm[formName][field] = field === "jobRole" ? { title: selectedOption.label, id: selectedOption.value } : selectedOption.value;
       } else {
         updatedForm[formName][field] = selectedOption.value;
       }
@@ -237,17 +239,15 @@ const ContractDetails = ({ data }) => {
         <Card title="Kompensasi dan Benefits" icon={<IconClipboardText />} isEditable={false}>
           <div className="grid grid-cols-2 gap-6 mt-6">
             <FormInput type="text" label="Gaji Pokok" value={formatCurrency(formData.benefits.basicSalary)} onEdit={false} />
-            {formData.benefits.adjustments
-              ?.filter((item) => item.type === "allowance")
-              .map((item, index) => (
-                <FormInput
-                  key={index}
-                  type="text"
-                  label={item.name}
-                  value={item.amountType === "fixed" ? formatCurrency(item.amount) : `${item.amount}%`}
-                  onEdit={false}
-                />
-              ))}
+            {formData.benefits.adjustments?.map((item, index) => (
+              <FormInput
+                key={index}
+                type="text"
+                label={item.name}
+                value={item.amountType === "fixed" ? formatCurrency(item.amount) : `${item.amount}%`}
+                onEdit={false}
+              />
+            ))}
             {formData.benefits.assets?.map((item, index) => (
               <FormInput key={index} type="text" label="Asset" value={item.assetName} onEdit={false} />
             ))}
@@ -336,7 +336,10 @@ const ContractDetails = ({ data }) => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setModalOpen({ type: "" })}
+                  onClick={() => {
+                    setFormData(initialFormData);
+                    setModalOpen({ type: "" });
+                  }}
                   className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-all duration-300 ease-linear"
                 >
                   Batal

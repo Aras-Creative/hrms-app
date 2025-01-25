@@ -6,6 +6,7 @@ import FileUpload from "../../components/FileUpload";
 import useFetch from "../../hooks/useFetch";
 import useAuth from "../../hooks/useAuth";
 import Snackbar from "../../components/Snackbar";
+import { useNavigate } from "react-router-dom";
 
 const LeaveRequest = () => {
   const { profile } = useAuth();
@@ -24,7 +25,8 @@ const LeaveRequest = () => {
     setUploadedFiles(files);
   };
 
-  const { submitData: requestLeave } = useFetch(`/employee/${profile.userId}/leave`, { method: "POST" });
+  const { submitData: requestLeave, loading } = useFetch(`/employee/${profile?.fullName}/leave`, { method: "POST" });
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,19 +37,15 @@ const LeaveRequest = () => {
     formData.append("reason", reason);
     formData.append("fullName", profile.fullName);
     formData.append("employeeId", profile.employeeId);
-
     uploadedFiles.forEach((file) => {
-      formData.append("attachment", file);
+      formData.append("leaves_attachment", file);
     });
 
-    // Simulate API call
     const { success, error, data } = await requestLeave(formData);
     if (success) {
-      setToast({ text: data.message, show: true });
+      setToast({ text: "Izin cuti kamu sudah diajukan!, cek notifikasi untuk melihat statusnya", show: true });
       setErrors({});
-      setTimeout(() => {
-        setToast({ text: "", show: false });
-      }, 3000);
+      navigate("/leave/success");
     } else {
       if (error && error.length > 0) {
         const mappedErrors = error.reduce((acc, errorObj) => {
@@ -60,6 +58,7 @@ const LeaveRequest = () => {
       }
     }
   };
+
   return (
     <Layouts title={"Buat Izin Cuti"} backUrl={"/homepage"}>
       <form onSubmit={handleSubmit} className="bg-white mt-14">
@@ -71,6 +70,7 @@ const LeaveRequest = () => {
               { label: "Keluarga", value: "keluarga" },
               { label: "Liburan", value: "liburan" },
               { label: "Mendesak", value: "mendesak" },
+              { label: "Pulang Awal", value: "pulang_awal" },
               { label: "Lainnya", value: "lainnya" },
             ]}
             placeholder={"Pilih Jenis Cuti"}
@@ -79,7 +79,6 @@ const LeaveRequest = () => {
             errors={errors.leaveType}
           />
           <div className="w-full grid grid-cols-1 gap-6 mt-4 mb-6">
-            {/* Tanggal Mulai */}
             <div className="relative">
               <label className="block text-gray-700 text-sm font-medium mb-1 px-2">Tanggal Mulai</label>
               <div className="relative">
@@ -88,10 +87,10 @@ const LeaveRequest = () => {
                   defaultDate={startDate}
                   onChange={setStartDate}
                 />
+                <p className="text-xs text-red-500 mt-1 px-2">{errors.startDate}</p>
               </div>
             </div>
 
-            {/* Tanggal Selesai */}
             <div className="relative">
               <label className="block text-gray-700 text-sm font-medium mb-1 px-2">Tanggal Selesai</label>
               <div className="relative">
@@ -100,10 +99,10 @@ const LeaveRequest = () => {
                   defaultDate={endDate}
                   onChange={setEndDate}
                 />
+                <p className="text-xs text-red-500 mt-1 px-2">{errors.endDate}</p>
               </div>
             </div>
           </div>
-
           <FormInput
             type="textarea"
             height={"36"}
@@ -113,7 +112,6 @@ const LeaveRequest = () => {
             errors={errors.reason}
             onChange={(e) => setReason(e.target.value)}
           />
-
           <div className="mt-3">
             <h1 className="mb-2 text-sm px-2">Lampiran</h1>
             <FileUpload label="Attach Your Letter" updateFilesCb={handleFileUpdate} error={errors.attachment} />
@@ -123,7 +121,10 @@ const LeaveRequest = () => {
         <div className="w-full mt-6 px-5">
           <button
             type="submit"
-            className="bg-slate-800 hover:bg-slate-700 transition-all duration-300 ease-in-out text-white font-bold py-2 w-full rounded-lg"
+            disabled={loading}
+            className={`bg-slate-800 hover:bg-slate-700 transition-all duration-300 ease-in-out text-white font-bold py-2 w-full rounded-lg ${
+              loading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
             Buat Izin Cuti
           </button>

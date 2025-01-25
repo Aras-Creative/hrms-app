@@ -1,7 +1,11 @@
 import React from "react";
 import FormInput from "../../../components/FormInput";
+import useAuth from "../../../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 const Account = () => {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   return (
     <div className="flex flex-col items-start">
       {[
@@ -37,7 +41,10 @@ const Account = () => {
             <div className="grid grid-cols-2 gap-4 mt-4 items-start whitespace-nowrap">
               <button
                 className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
-                onClick={() => console.log("Settings reset to default.")}
+                onClick={() => {
+                  logout();
+                  navigate("/auth/login");
+                }}
               >
                 Log Out
               </button>

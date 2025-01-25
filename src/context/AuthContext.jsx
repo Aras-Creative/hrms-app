@@ -1,28 +1,37 @@
 import { jwtDecode } from "jwt-decode";
-import React, { createContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useState, useEffect } from "react";
 import useFetch from "../hooks/useFetch";
+import { useNavigate } from "react-router-dom";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [auth, setAuth] = useState({
-    token: localStorage.getItem("token") || null,
-    user: null,
-  });
-  const [settingsPreference, setSettingsPreference] = useState(null);
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
-  const [isProfileComplete, setIsProfileComplete] = useState(false);
 
-  // Helper to check if the token is valid
-  const isTokenValid = useCallback((token) => {
+  const isTokenValid = (token) => {
+    if (!token) return false;
     try {
       const decoded = jwtDecode(token);
       return decoded.exp * 1000 > Date.now();
-    } catch (error) {
-      console.error("Error decoding token", error);
+    } catch (e) {
       return false;
     }
-  }, []);
+  };
+
+  const [auth, setAuth] = useState(() => {
+    const token = localStorage.getItem("token");
+    if (token && isTokenValid(token)) {
+      try {
+        const decodedUser = jwtDecode(token);
+        return { token, user: decodedUser };
+      } catch (error) {
+        localStorage.removeItem("token");
+        return { token: null, user: null };
+      }
+    }
+    return { token: null, user: null };
+  });
 
   const {
     responseData: profileData,
@@ -33,7 +42,7 @@ export const AuthProvider = ({ children }) => {
     headers: {
       Authorization: `Bearer ${auth.token}`,
     },
-    skip: !auth.token || !isTokenValid(auth.token), // Only fetch if the token is valid
+    skip: !auth.token || !isTokenValid(auth.token),
   });
 
   const {
@@ -45,46 +54,35 @@ export const AuthProvider = ({ children }) => {
     headers: {
       Authorization: `Bearer ${auth.token}`,
     },
-    skip: !auth.token || !isTokenValid(auth.token), // Only fetch if the token is valid
+    skip: !auth.token || !isTokenValid(auth.token),
   });
 
   useEffect(() => {
-    // Token validation effect
     if (auth.token && !isTokenValid(auth.token)) {
       logout();
     }
   }, [auth.token, isTokenValid]);
 
   useEffect(() => {
-    // Decode token and set user state
-    if (auth.token && isTokenValid(auth.token)) {
-      const decodedUser = jwtDecode(auth.token);
-      setAuth((prevAuth) => ({ ...prevAuth, user: decodedUser }));
-    }
-  }, [auth.token, isTokenValid]);
-
-  useEffect(() => {
     if (profileData) {
       setProfile(profileData.userProfile);
-      setIsProfileComplete(profileData.isComplete);
     }
   }, [profileData]);
-
-  useEffect(() => {
-    if (settingsData) {
-      setSettingsPreference(settingsData);
-    }
-  }, [settingsData]);
 
   const login = (token) => {
     if (isTokenValid(token)) {
       localStorage.setItem("token", token);
+      const user = jwtDecode(token);
       setAuth({
         token,
-        user: jwtDecode(token),
+        user,
       });
-      profileRefetch();
-      settingsRefetch();
+      if (user?.role === "admin" || user?.role === "super") {
+        navigate("/dashboard");
+      } else {
+        profileRefetch();
+        navigate("/homepage");
+      }
     } else {
       console.error("Invalid or expired token");
     }
@@ -109,11 +107,7 @@ export const AuthProvider = ({ children }) => {
         profileError,
         login,
         logout,
-        isProfileComplete,
         profileRefetch,
-        settingsLoading,
-        settingsError,
-        settingsPreference,
         settingsRefetch,
       }}
     >

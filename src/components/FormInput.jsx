@@ -2,6 +2,7 @@ import React from "react";
 import Select from "react-select";
 import CurrencyInput from "../components/CurrenyInput";
 import { formatPhoneNumber } from "../utils/formatPhoneNumber";
+import { formatTime } from "../utils/formatTimeiInput";
 
 const FormInput = ({
   label,
@@ -43,20 +44,21 @@ const FormInput = ({
             getOptionLabel={getOptionLabel}
             getOptionValue={getOptionValue}
             isSearchable={true}
+            menuShouldScrollIntoView={true}
             styles={{
-              control: (base, state) => ({
+              control: (base) => ({
                 ...base,
                 border: "none",
                 boxShadow: "none",
                 outline: "none",
               }),
-              singleValue: (base, state) => ({
+              singleValue: (base) => ({
                 ...base,
-                color: state.isDisabled ? "rgb(0, 0, 0)" : "black",
+                color: "black",
               }),
-              placeholder: (base, state) => ({
+              placeholder: (base) => ({
                 ...base,
-                color: state.isDisabled ? "rgb(0, 0, 0)" : "black",
+                color: "black",
               }),
               dropdownIndicator: (base) => ({
                 ...base,
@@ -74,6 +76,9 @@ const FormInput = ({
                 ...base,
                 backgroundColor: "white",
                 zIndex: 999,
+                whiteSpace: "nowrap",
+                width: "auto", // Menyesuaikan lebar menu
+                minWidth: "fit-content", // Minimum sesuai konten
               }),
               option: (base, state) => ({
                 ...base,
@@ -138,6 +143,18 @@ const FormInput = ({
           disabled={disabled}
           readOnly={readOnly}
           onInput={(e) => formatPhoneNumber(e)}
+        />
+      ) : type === "time" ? (
+        <input
+          type={"time"}
+          id={label}
+          value={formatTime(value)}
+          onChange={onChange}
+          className={`w-full px-3 py-2.5 rounded-xl ${border} ${
+            errors ? "border-red-500" : "border-gray-300"
+          } disabled:text-zinc-500 focus:border-slate-700 outline-none`}
+          disabled={disabled}
+          readOnly={readOnly}
         />
       ) : (
         <input

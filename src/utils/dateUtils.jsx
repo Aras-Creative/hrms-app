@@ -71,3 +71,8 @@ export const formatDate = (date) => {
   if (!date) return "-";
   return new Date(date).toLocaleDateString("id-ID", { day: "numeric", weekday: "long", month: "long", year: "numeric" });
 };
+
+export const formatTimeOnly = (datetime) => {
+  if (!datetime) return "-";
+  return new Date(datetime).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+};

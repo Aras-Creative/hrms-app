@@ -10,6 +10,7 @@ import {
   IconPhone,
   IconPlus,
   IconUser,
+  IconX,
 } from "@tabler/icons-react";
 import Table from "../../../components/Table";
 import DashboardLayouts from "../../../layouts/DashboardLayouts";
@@ -28,6 +29,10 @@ import FormInput from "../../../components/FormInput";
 import Pagination from "../../../components/Pagination";
 import { handleDownloadFile } from "../../../utils/handleDownloadFile";
 import ExcelUpload from "../../../components/ExcelUpload";
+import { validateEmployeeData } from "../../../utils/excelValidations";
+import { EmployeeColumns } from "../../../utils/excelColumns";
+import Modal from "../../../components/Modal";
+import Datepicker from "../../../components/Datepicker";
 
 // Initial state for the reducer
 const initialState = {
@@ -77,6 +82,7 @@ const reducer = (state, action) => {
 
 const Employee = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const [modal, setModal] = useState({ title: "" });
   const { currentPage, pageSize, totalPages, tableView, filter, jobRoleOptions, filterParams, searchQuery, debouncedSearchQuery } = state;
 
   const debouncedSearch = useDebounce((value) => {
@@ -98,9 +104,12 @@ const Employee = () => {
   }, [filterParams, debouncedSearchQuery]);
 
   const url = `/employee${query ? `?${query}` : ""}`;
+  const [selectedUserIds, setSelectedUserIds] = useState([]);
+  const [contractStart, setContractStart] = useState(new Date());
+  const [contractEnd, setContractEnd] = useState(new Date());
 
   const {
-    responseData: employeeData = [],
+    responseData: employeeData,
     loading: employeeDataLoading,
     error: employeeDataError,
     totalPages: employeeDataPages,
@@ -127,6 +136,28 @@ const Employee = () => {
     fetchJobRoles(true, dispatch);
   }, [filter]);
 
+  const handleCheckboxChange = (event) => {
+    const isChecked = event.target.checked;
+    const userId = event.target.value;
+    setSelectedUserIds((prevSelected) => {
+      if (isChecked) {
+        return [...prevSelected, userId];
+      } else {
+        return prevSelected.filter((id) => id !== userId);
+      }
+    });
+  };
+
+  // const handleSelectAllChange = (e) => {
+  //   if (e.target.checked) {
+  //     const allIds = employeeData?.map((row) => row.userId);
+  //     console.log(allIds);
+  //     // setSelectedUserIds(allIds);
+  //   } else {
+  //     setSelectedUserIds([]);
+  //   }
+  // };
+
   const employeeColumns = useMemo(
     () => [
       {
@@ -138,6 +169,12 @@ const Employee = () => {
           const profileImage = rowData.profilePicture && `${STORAGE_URL}/document/${rowData.userId}/${rowData.profilePicture.path}`;
           return (
             <div className="flex items-center gap-3">
+              <div>
+                <label>
+                  <input type="checkbox" value={rowData?.userId} onChange={handleCheckboxChange} />
+                </label>
+              </div>
+
               {profileImage ? (
                 <div className="w-10 h-10 rounded-full overflow-hidden">
                   <img src={profileImage} alt={`${value}'s Profile`} className="w-full h-full object-cover" />
@@ -216,7 +253,32 @@ const Employee = () => {
     dispatch({ type: "SET_TABLE_VIEW", payload: view });
   };
 
+  const { updateData: updateJobRoleData = [], loading: updateJobroleLoading } = useFetch("employee/jobrole/update");
+
+  const updateJobRole = async (value) => {
+    const data = {
+      jobRoleId: value,
+      userIds: selectedUserIds,
+    };
+    const { success } = await updateJobRoleData(data);
+    if (success) {
+      setSelectedUserIds([]);
+      employeeDataRefetch();
+      setModal({ title: "" });
+    }
+  };
+
   const handlePageChange = (page) => dispatch({ type: "SET_PAGE", payload: page });
+  const { updateData: extendContract, loading: extendContractLoading } = useFetch(`/employee/contract/extends`, { method: "PUT" });
+  const handleExtendContract = async () => {
+    const contractData = {
+      startDate: contractStart,
+      endDate: contractEnd,
+      employeeId: selectedUserIds,
+    };
+    await extendContract(contractData);
+    setModal({ title: "" });
+  };
 
   return (
     <DashboardLayouts>
@@ -236,7 +298,12 @@ const Employee = () => {
                 <IconPlus size={20} />
                 <span className="text-sm text-white font-bold">Tambah Data Karyawan</span>
               </NavLink>
-              <ExcelUpload />
+              <ExcelUpload
+                postUrl={"/document/employee"}
+                expectedHeaders={["No", "Nama", "Tempat Lahir", "Tanggal Lahir", "NIK KTP", "Alamat"]}
+                columns={EmployeeColumns}
+                validate={validateEmployeeData}
+              />
 
               <button
                 type="button"
@@ -262,7 +329,10 @@ const Employee = () => {
                 { label: "100 Karyawan", value: 100 },
               ]}
               value={{ label: `${pageSize} Karyawan`, value: pageSize }}
-              onChange={(e) => dispatch({ type: "SET_PAGE_SIZE", payload: e.value })}
+              onChange={(e) => {
+                dispatch({ type: "SET_PAGE_SIZE", payload: e.value });
+                dispatch({ type: "SET_PAGE", payload: 1 });
+              }}
             />
             <TableViewButtons tableView={tableView} handleTableViewChange={handleTableViewChange} />
           </div>
@@ -283,6 +353,98 @@ const Employee = () => {
           <Grid data={employeeData} />
         )}
       </div>
+
+      {selectedUserIds.length > 0 && (
+        <div className="fixed bottom-20 left-0 right-0 flex items-center justify-center px-4">
+          <div className="flex flex-col items-center justify-between p-4 rounded-xl bg-white border shadow-lg w-auto">
+            <div className="flex space-x-4">
+              <button
+                className="px-4 py-2 text-sm font-medium text-white bg-gray-500 rounded-lg hover:bg-gray-600 focus:outline-none"
+                onClick={() => {
+                  setSelectedUserIds([]);
+                  employeeDataRefetch();
+                }}
+              >
+                Unselect All
+              </button>
+              <button
+                className="px-4 py-2 text-sm font-medium text-white bg-slate-800 rounded-lg hover:bg-slate-900 focus:outline-none"
+                onClick={() => setModal({ title: "Update Contract" })}
+              >
+                Update Contract
+              </button>
+              <button
+                className="px-4 py-2 text-sm font-medium text-white bg-emerald-700 rounded-lg hover:bg-emerald-900 focus:outline-none"
+                onClick={() => setModal({ title: "Update Job Role" })}
+              >
+                Update Job Role
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Modal isOpen={modal.title !== ""} width="1/3">
+        <Modal.Header>
+          <div className="div flex items-center justify-between">
+            {modal.title}{" "}
+            <button type="button" onClick={() => setModal({ title: "" })}>
+              <IconX />
+            </button>
+          </div>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="pb-12">
+            {modal.title === "Update Job Role" ? (
+              <FormInput
+                type="select"
+                options={jobRoleOptions}
+                placeholder={"Select Job Role"}
+                label={"Job Role"}
+                onChange={(e) => updateJobRole(e.value)}
+                disabled={updateJobroleLoading}
+              />
+            ) : (
+              <div className="w-full flex flex-col items-center p-4">
+                <div className="grid grid-cols-2 gap-4 w-full">
+                  <div className=" w-full relative">
+                    <h1 className="text-slate-800 text-sm">Tanggal Mulai</h1>
+                    <div className="absolute top-4 w-full">
+                      <Datepicker label={"Select Start Date"} defaultDate={contractStart} onChange={(date) => setContractStart(date)} />
+                    </div>
+                  </div>
+                  <div className=" w-full relative">
+                    <h1 className="text-slate-800 text-sm">Tanggal Berakhir</h1>
+                    <div className="absolute top-4 w-full">
+                      <Datepicker defaultDate={contractEnd} label={"Select Start Date"} onChange={(date) => setContractEnd(date)} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </Modal.Body>
+
+        {modal.title === "Update Contract" && (
+          <Modal.Footer>
+            <button
+              type="button"
+              onClick={() => setModal({ title: "" })}
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-all duration-200"
+            >
+              Batal
+            </button>
+            <button
+              type="button"
+              onClick={handleExtendContract}
+              disabled={extendContractLoading}
+              className="px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all duration-200"
+            >
+              {extendContractLoading ? "Menyimpan..." : "Simpan"}
+            </button>
+          </Modal.Footer>
+        )}
+      </Modal>
     </DashboardLayouts>
   );
 };

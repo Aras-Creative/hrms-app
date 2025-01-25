@@ -8,7 +8,7 @@ const useFetch = (endpoint, options = {}) => {
   const [totalPages, setTotalPages] = useState(1);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const { method = "GET", params = {}, data = null, headers = {}, pageSize = 10, currentPage = 1, allowCredentials = "include" } = options;
+  const { method = "GET", params = {}, data = null, headers = {}, pageSize = 100, currentPage = 1, allowCredentials = "include" } = options;
 
   const fetchData = async () => {
     setLoading(true);

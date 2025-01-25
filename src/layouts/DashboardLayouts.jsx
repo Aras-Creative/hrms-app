@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
-import { IconBell, IconMail } from "@tabler/icons-react";
+import { IconBell, IconLogout } from "@tabler/icons-react";
 import { getGreeting } from "../utils/dateUtils";
 import { useCurrentTime } from "../hooks/useCurrentTime";
 import { initializeSocket } from "../utils/WebSocket";
@@ -8,11 +8,15 @@ import { BASE_API_URL } from "../config";
 import Notification from "../components/Notification ";
 import useFetch from "../hooks/useFetch";
 import { RequestNotificationPermission, showDesktopNotification } from "../components/RequestNotificationPermission";
+import useAuth from "../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 const DashboardLayouts = ({ children }) => {
   const [showNotification, setShowNotification] = useState(false);
   const [notifBadge, setNotifBadge] = useState(false);
   const { responseData: notifications, refetch } = useFetch(`/dashboard/notifications`);
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const cleanupSocket = initializeSocket(
@@ -51,10 +55,24 @@ const DashboardLayouts = ({ children }) => {
           <img className="w-44" src="/image/aras-logo.webp" alt="Aras Creative Logo" />
         </div>
 
-        <div className="flex gap-3 items-center text-end">
+        <div className="flex gap-12 divide-x-2 items-center text-end">
           <div className="flex flex-col gap-1 text-white">
-            <h1 className="text-lg">Now is {currentTime.format("hh:mm A")}</h1>
+            <h1 className="text-lg">Sekarang Pukul {currentTime.format("hh:mm A")}</h1>
             <p className="text-sm text-white">{getGreeting()}</p>
+          </div>
+
+          <div className="border-l px-5">
+            <button
+              type="button"
+              onClick={() => {
+                logout();
+                navigate("/auth/login");
+              }}
+              className="text-white flex items-center gap-4"
+            >
+              Logout
+              <IconLogout />
+            </button>
           </div>
         </div>
       </header>

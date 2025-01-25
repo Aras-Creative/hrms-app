@@ -21,6 +21,7 @@ const ProfileDetails = () => {
     religion: profile?.religion || "",
     placeOfBirth: profile?.placeOfBirth || "",
     dateOfBirth: profile?.dateOfBirth || "",
+    noktp: profile?.noktp || "",
   });
   const [errors, setErrors] = useState({});
 
@@ -34,7 +35,6 @@ const ProfileDetails = () => {
     }
   );
 
-  // Handle image upload change
   const handleImageChange = (event) => {
     const file = event.target.files[0];
     if (file && profileFile !== file) {
@@ -108,7 +108,7 @@ const ProfileDetails = () => {
           <div className="relative">
             {showPlaceholder ? (
               <div className="w-36 h-36 rounded-full border-4 text-4xl border-white bg-gray-300 flex items-center justify-center text-slate-800 font-bold shadow-md">
-                {getInitials(profile?.fullName)} {/* Display initials */}
+                {getInitials(profile?.fullName)}
               </div>
             ) : (
               <img
@@ -129,6 +129,16 @@ const ProfileDetails = () => {
 
           {/* Profile Form Inputs */}
           <div className="w-full px-6 mt-10">
+            <div className="mb-4">
+              <FormInput
+                type="number"
+                label="NIK KTP"
+                value={profileData.noktp}
+                onChange={(e) => handleDataChange("noktp", e.target.value)}
+                required
+                errors={errors?.fullName}
+              />
+            </div>
             <div className="mb-4">
               <FormInput
                 type="text"

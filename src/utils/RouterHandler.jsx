@@ -1,8 +1,11 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import { AuthProvider } from "../context/AuthContext";
-import RouteGuard from "../hoc/RouteGuard";
-import React, { Suspense } from "react";
+import { AdminRoute, GuestRoute, UserPrivateRoute } from "../hoc/RouteGuard";
+import React, { Suspense, useEffect } from "react";
 import { Loading } from "../components/Preloaders";
+import Payslip from "../pages/user/Payslip";
+import Success from "../pages/user/Success";
+import UserCalendar from "../pages/user/Calendar";
 
 const Login = React.lazy(() => import("../pages/Login"));
 const Dashboard = React.lazy(() => import("../pages/dashboard/Dashboard"));
@@ -30,39 +33,63 @@ const TermsCondition = React.lazy(() => import("../pages/user/profile/TermsCondi
 const FAQ = React.lazy(() => import("../pages/user/profile/FAQ"));
 
 function RouterHandler() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (window.location.pathname === "/") {
+      navigate("/auth/login");
+    }
+  }, [navigate]);
+
   return (
     <AuthProvider>
       <Suspense fallback={<Loading />}>
         <Routes>
-          <Route path="/auth" element={<RouteGuard type="guest" />}>
+          <Route path="/auth" element={<GuestRoute />}>
             <Route path="login" element={<Login />} />
           </Route>
-          <Route path="/" element={<RouteGuard type={"private"} allowedRoles={["user"]} />}>
+
+          {/* User Routes */}
+          <Route element={<UserPrivateRoute />}>
             <Route path="homepage" element={<Homepage />} />
             <Route path="settings" element={<Menu />} />
+            <Route path="calendar" element={<UserCalendar />} />
             <Route path="me" element={<Details />} />
-            <Route path="security" element={<Security />} />
+            <Route path="security">
+              <Route path="" element={<Security />} />
+              <Route path="contacts" element={<Contact />} />
+              <Route path="password" element={<Password />} />
+            </Route>
             <Route path="notification" element={<Notification />} />
-            <Route path="leave" element={<Leave />} />
-            <Route path="leave/request" element={<LeaveRequest />} />
-            <Route path="security/contacts" element={<Contact />} />
-            <Route path="security/password" element={<Password />} />
+            <Route path="leave">
+              <Route path="" element={<Leave />} />
+              <Route path="request" element={<LeaveRequest />} />
+              <Route path="success" element={<Success />} />
+            </Route>
+            <Route path="payslip" element={<Payslip />} />
             <Route path="privacy-policy" element={<PrivacyPolicy />} />
             <Route path="terms-and-condition" element={<TermsCondition />} />
             <Route path="faq" element={<FAQ />} />
           </Route>
-          <Route path="/" element={<RouteGuard type={"private"} allowedRoles={["admin"]} />}>
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="dashboard/employee" element={<Employee />} />
-            <Route path="dashboard/employee/:employeeId/details" element={<EmployeeDetails />} />
-            <Route path="dashboard/employee/contract" element={<CreateEmployeeContract />} />
-            <Route path="dashboard/jobrole" element={<JobRole />} />
-            <Route path="dashboard/settings" element={<Settings />} />
-            <Route path="dashboard/payroll" element={<Payroll />} />
-            <Route path="dashboard/calendar" element={<MyCalendar />} />
-            <Route path="dashboard/leaves" element={<Leaves />} />
-            <Route path="dashboard/document" element={<Documents />} />
-            <Route path="dashboard/document/:path" element={<Files />} />
+
+          {/* Admin Routes */}
+          <Route element={<AdminRoute />}>
+            <Route path="dashboard">
+              <Route path="" element={<Dashboard />} />
+              <Route path="employee">
+                <Route path="" element={<Employee />} />
+                <Route path=":employeeId/details" element={<EmployeeDetails />} />
+                <Route path="contract" element={<CreateEmployeeContract />} />
+              </Route>
+              <Route path="jobrole" element={<JobRole />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="payroll" element={<Payroll />} />
+              <Route path="calendar" element={<MyCalendar />} />
+              <Route path="leaves" element={<Leaves />} />
+              <Route path="document">
+                <Route path="" element={<Documents />} />
+                <Route path=":path" element={<Files />} />
+              </Route>
+            </Route>
           </Route>
         </Routes>
       </Suspense>

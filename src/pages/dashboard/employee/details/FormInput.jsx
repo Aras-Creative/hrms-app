@@ -92,7 +92,7 @@ const FormInput = ({ type = "text", label, value, onChange, options, erorr, onEd
             {label}
           </label>
           <input
-            type={"number"}
+            type={"text"}
             name={label}
             value={value}
             onChange={onChange}

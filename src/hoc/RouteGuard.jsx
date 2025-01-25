@@ -2,10 +2,22 @@ import { Navigate, Outlet } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import { Loading } from "../components/Preloaders";
 
-const RouteGuard = ({ type, allowedRoles }) => {
-  const { auth, profile, profileLoading, profileError, isProfileComplete } = useAuth();
+export const GuestRoute = () => {
+  const { auth } = useAuth();
+  const isLoggedIn = !!auth.token && !!auth.user;
 
-  const isLoading = profileLoading || !auth;
+  if (isLoggedIn) {
+    return <Navigate to={auth?.user?.role === "admin" || auth?.user?.role === "super" ? "/dashboard" : "/homepage"} replace />;
+  }
+  return <Outlet />;
+};
+
+export const AdminRoute = () => {
+  const { auth } = useAuth();
+  const isLoading = !auth;
+  const isAdmin = auth?.user?.role === "admin" || auth?.user?.role === "super";
+  const isLoggedIn = !!auth?.token && !!auth?.user;
+
   if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -14,29 +26,40 @@ const RouteGuard = ({ type, allowedRoles }) => {
     );
   }
 
-  const isLoggedIn = !!auth?.token && !!auth?.user;
-  const hasProfile = profile && !profileError;
-  const hasRole = !allowedRoles || allowedRoles.includes(auth?.user?.role);
-
-  if (type === "guest") {
-    if (isLoggedIn) {
-      const redirectPath = auth?.user?.role === "user" ? "/homepage" : "/dashboard";
-      return <Navigate to={redirectPath} replace />;
-    }
-    return <Outlet />;
+  if (!isLoggedIn) {
+    return <Navigate to="/auth/login" replace />;
   }
 
-  if (type === "private") {
-    if (!isLoggedIn || (!hasProfile && auth?.user?.role === "user")) {
-      return <Navigate to="/auth/login" replace />;
-    }
-    if (!hasRole) {
-      return <Navigate to="/unauthorized" replace />;
-    }
-    return <Outlet />;
+  if (!isAdmin) {
+    return <Navigate to="/unauthorized" replace />;
   }
 
-  return <Navigate to="/" replace />;
+  return <Outlet />;
 };
 
-export default RouteGuard;
+export const UserPrivateRoute = () => {
+  const { auth, profileLoading } = useAuth();
+  const isLoading = profileLoading || !auth;
+  const isLoggedIn = !!auth?.token && !!auth?.user;
+  const isUser = auth.user?.role === "user";
+
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <Loading />
+      </div>
+    );
+  }
+
+  if (!isLoggedIn) {
+    return <Navigate to="/auth/login" replace />;
+  }
+
+  if (!isUser) {
+    return <Navigate to="/unauthorized" replace />;
+  }
+
+  return <Outlet />;
+};
+
+export default UserPrivateRoute;

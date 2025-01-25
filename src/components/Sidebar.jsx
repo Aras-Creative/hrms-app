@@ -3,6 +3,7 @@ import {
   IconCalendar,
   IconCurrencyDollar,
   IconFile,
+  IconFolder,
   IconHeadset,
   IconHelpCircle,
   IconHome,
@@ -16,7 +17,6 @@ import { NavLink } from "react-router-dom";
 const linkGroups = [
   {
     links: [
-      { to: "/", icon: <IconMenu2 /> },
       { to: "/dashboard", icon: <IconHome /> },
       { to: "/dashboard/calendar", icon: <IconCalendar /> },
       { to: "/dashboard/leaves", icon: <IconMailOpened /> },
@@ -27,17 +27,9 @@ const linkGroups = [
     links: [
       { to: "/dashboard/employee", icon: <IconUserCircle /> },
       { to: "/dashboard/jobrole", icon: <IconBriefcase /> },
-      { to: "/dashboard/document", icon: <IconFile /> },
+      { to: "/dashboard/document", icon: <IconFolder /> },
       { to: "/dashboard/payroll", icon: <IconCurrencyDollar /> },
     ],
-  },
-  {
-    links: [
-      { to: "/dashboard/settings", icon: <IconSettings /> },
-      { to: "/dashboard/help", icon: <IconHeadset /> },
-      { to: "/dashboard/faq", icon: <IconHelpCircle className="bg-slate-800 text-slate-100 text-2xl rounded-full" /> },
-    ],
-    borderClass: "border-t border-gray-300 absolute bottom-0",
   },
 ];
 

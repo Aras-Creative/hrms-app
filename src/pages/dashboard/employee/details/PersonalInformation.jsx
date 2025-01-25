@@ -31,9 +31,9 @@ const PersonalInformation = ({ data, refetch }) => {
     },
     addressInfo: { address: data?.address || "" },
     contactInfo: {
-      email: data?.email || "",
-      phoneNumber: data?.phoneNumber || "",
-      emergencyContact: data?.emergencyContact || "",
+      email: data?.email || "-",
+      phoneNumber: data?.phoneNumber,
+      emergencyContact: data?.emergencyContact,
     },
     employementData: {
       jobRole: data?.jobRole?.jobRoleTitle || "",
@@ -208,14 +208,14 @@ const PersonalInformation = ({ data, refetch }) => {
               <FormInput
                 type="email"
                 label="Alamat Email"
-                value={formData.contactInfo.email || "-"}
+                value={formData.contactInfo.email}
                 onChange={handleFormInput("contactInfo", "email")}
                 onEdit={isFormEdit.contactInfo}
               />
               <FormInput
-                type="text"
+                type="phone"
                 label="Nomor Handphone"
-                value={formData.contactInfo.phoneNumber || "-"}
+                value={formData.contactInfo.phoneNumber}
                 onChange={handleFormInput("contactInfo", "phoneNumber")}
                 onEdit={isFormEdit.contactInfo}
               />
@@ -225,9 +225,9 @@ const PersonalInformation = ({ data, refetch }) => {
             <h1 className="w-full text-slate-800 font-semibold mb-2">Kontak Lain</h1>
             <div className="w-full grid grid-cols-2 gap-4">
               <FormInput
-                type="text"
+                type="phone"
                 label="Kontak Darurat"
-                value={formData.contactInfo.emergencyContact || "-"}
+                value={formData.contactInfo.emergencyContact}
                 onChange={handleFormInput("contactInfo", "emergencyContact")}
                 onEdit={isFormEdit.contactInfo}
               />

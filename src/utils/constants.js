@@ -18,9 +18,10 @@ export const createContractState = {
   },
   benefits: {
     adjustment: [
-      { type: "deduction", amount: "", name: "BPJS Kesehatan", amountType: "percent" },
-      { type: "deduction", amount: "", name: "BPJS Jaminan Hari Tua", amountType: "percent" },
-      { type: "deduction", amount: "", name: "BPJS Jaminan Pensiun", amountType: "percent" },
+      { type: "deduction", amount: "", name: "Potongan BPJS Kesehatan", amountType: "percent" },
+      { type: "deduction", amount: "", name: "Pootngan BPJS JHT", amountType: "percent" },
+      { type: "deduction", amount: "", name: "Potongan BPJS JKK", amountType: "percent" },
+      { type: "deduction", amount: "", name: "Potongan BPJS JKM", amountType: "percent" },
     ],
     bpjsKesehatanNumber: "",
     bpjsKetenagakerjaanNumber: "",

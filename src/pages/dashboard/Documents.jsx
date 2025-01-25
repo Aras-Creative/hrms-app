@@ -5,22 +5,18 @@ import useFetch from "../../hooks/useFetch";
 import { NavLink } from "react-router-dom";
 
 const Documents = () => {
-  const { responseData: documents, loading, error, refetch } = useFetch("/document");
+  const { responseData: documents, refetch } = useFetch("/document");
   const { updateData: deleteFile } = useFetch(`/document/`, { method: "DELETE" });
 
   const [deleting, setDeleting] = useState(null);
 
   const handleDeleteDirectory = async (path) => {
-    setDeleting(path); // Menandakan direktori mana yang sedang dihapus
-    const { success, error } = await deleteFile({ path });
-
+    setDeleting(path);
+    const { success } = await deleteFile({ path });
     if (success) {
-      refetch(); // Refetch data setelah berhasil menghapus
-    } else {
-      console.log(error);
+      refetch();
     }
-
-    setDeleting(null); // Reset loading state setelah selesai
+    setDeleting(null);
   };
 
   return (

@@ -36,17 +36,48 @@ const TimeManagement = () => {
       endDate: today.toLocaleDateString("en-CA"),
     });
   }, []);
+  const generateMonthlyAttendance = (attendanceData) => {
+    const month = new Date().getMonth() + 1;
+    const year = new Date().getFullYear();
+    const daysInMonth = new Date(year, month, 0).getDate();
+
+    const template = [];
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const record = attendanceData.find((item) => item.date === date);
+
+      template.push(
+        record
+          ? { ...record }
+          : {
+              date: date,
+              status: "Belum Absen",
+              attendanceId: null,
+              breakIn: null,
+              breakOut: null,
+              clockIn: null,
+              clockOut: null,
+              createdAt: null,
+              updatedAt: null,
+              fingerprint: null,
+              lateness: null,
+              userId: null,
+            }
+      );
+    }
+
+    return template;
+  };
 
   return (
     <div className="w-full">
       <AttendanceStats sendAttendanceData={handleAttendanceData} />
 
       <div className="w-full flex flex-col gap-3 mt-6">
-        {attendanceData.length > 0
-          ? attendanceData.map((attendance, idx) => (
-              <AttendanceCard key={idx} attendance={attendance} dateRange={dateRange} formatDate={formatDate} calculateDuration={calculateDuration} />
-            ))
-          : null}
+        {generateMonthlyAttendance(attendanceData).map((attendance, idx) => (
+          <AttendanceCard key={idx} attendance={attendance} dateRange={dateRange} formatDate={formatDate} calculateDuration={calculateDuration} />
+        ))}
       </div>
     </div>
   );

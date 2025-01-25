@@ -27,6 +27,7 @@ import Pagination from "../../components/Pagination";
 import { handleDownloadFile } from "../../utils/handleDownloadFile";
 import { formatDate } from "../../utils/dateUtils";
 import Toast from "../../components/Toast";
+import { NavLink } from "react-router-dom";
 
 const Dashboard = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -34,17 +35,42 @@ const Dashboard = () => {
   const [pageSize, setPageSize] = useState(20);
   const [filterStatus, setFilterStatus] = useState(null);
   const [toast, setToast] = useState({ type: "", message: "" });
+  const [jobRole, setJobRole] = useState("");
+  const [jobRoleOptions, setJobRoleOptions] = useState();
 
   const today = currentDate.toLocaleDateString("en-CA");
   const currentMonth = currentDate.toISOString().slice(0, 7);
-
+  const url = `/attendance?${[
+    today ? `date=${today}` : "",
+    currentMonth ? `month=${currentMonth}` : "",
+    filterStatus ? `status=${filterStatus}` : "",
+    jobRole ? `jobRole=${jobRole}` : "",
+  ]
+    .filter(Boolean)
+    .join("&")}`;
   const {
     responseData: attendancesData = [],
     loading: attendancesDataLoading,
     error: attendancesDataError,
     totalPages: attendancesDataPages,
     refetch: attendancesDataRefetch,
-  } = useFetch(`/attendance?date=${today}&month=${currentMonth}&status=${filterStatus || ""}`, { currentPage, pageSize });
+  } = useFetch(url, { currentPage, pageSize });
+
+  const { responseData: jobRoleData = [] } = useFetch("/jobrole");
+
+  useEffect(() => {
+    if (jobRoleData?.length) {
+      setJobRoleOptions([
+        { label: "Semua Job Role", value: null },
+        ...jobRoleData.map(({ jobRoleTitle, jobRoleId }) => ({
+          label: jobRoleTitle,
+          value: jobRoleId,
+        })),
+      ]);
+    } else {
+      setJobRoleOptions([{ label: "TIdak ada data Job Role", value: null }]);
+    }
+  }, [jobRoleData]);
 
   const [attendances, setAttendances] = useState([]);
 
@@ -86,8 +112,6 @@ const Dashboard = () => {
     return () => socket.disconnect();
   }, []);
 
-  console.log(attendancesData?.monthAttendance);
-
   const { attendanceData, notPresentData } = mappedAttendanceData(attendancesData?.monthAttendance || {});
 
   const employeeColumns = useMemo(
@@ -102,13 +126,16 @@ const Dashboard = () => {
           return (
             <div className="flex items-center gap-3">
               {profileImage ? (
-                <div className="w-10 h-10 rounded-full overflow-hidden">
+                <NavLink to={`/dashboard/employee/${rowData?.userId}/details`} className="w-10 h-10 rounded-full overflow-hidden">
                   <img src={profileImage} alt={`${value}'s Profile`} className="w-full h-full object-cover" />
-                </div>
+                </NavLink>
               ) : (
-                <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-slate-800 text-sm">
+                <NavLink
+                  to={`/dashboard/employee/${rowData?.userId}/details`}
+                  className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-slate-800 text-sm"
+                >
                   {value[0]?.toUpperCase() || "?"}
-                </div>
+                </NavLink>
               )}
               <div className="flex flex-col">
                 <span className="font-bold">{value}</span>
@@ -224,6 +251,7 @@ const Dashboard = () => {
       </div>
       <div className="w-full flex justify-end items-center mb-5">
         <div className="flex gap-3 items-center">
+          <FormInput type="select" options={jobRoleOptions} placeholder={"Select Job Role"} onChange={(e) => setJobRole(e.value)} />
           <FormInput type="select" placeholder={"Filter Status"} options={attendanceFilter} onChange={(e) => setFilterStatus(e.value)} />
           <FormInput
             type="select"
@@ -234,7 +262,10 @@ const Dashboard = () => {
               { label: "100 Karyawan", value: 100 },
             ]}
             value={{ label: `${pageSize} Karyawan`, value: pageSize }}
-            onChange={(e) => setPageSize(e.value)}
+            onChange={(e) => {
+              setPageSize(e.value);
+              setCurrentPage(1);
+            }}
           />
         </div>
       </div>

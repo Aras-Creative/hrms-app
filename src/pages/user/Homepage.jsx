@@ -14,6 +14,18 @@ import {
   IconClockPlay,
   IconHandClick,
   IconLoader2,
+  IconArrowRight,
+  IconCalendarCheck,
+  IconClockOff,
+  IconClockExclamation,
+  IconCalendarOff,
+  IconCalendarCode,
+  IconCalendarPause,
+  IconMichelinBibGourmand,
+  IconReceipt,
+  IconMinus,
+  IconX,
+  IconCalendar,
 } from "@tabler/icons-react";
 import { NavLink } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
@@ -27,6 +39,8 @@ import FormInput from "../../components/FormInput";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
 import Forbidden from "../../assets/error/403.webp";
 import { BASE_API_URL } from "../../config";
+import moment from "moment";
+import CircularProgressBar from "../../components/CircularProgressBar";
 
 const Homepage = () => {
   // Hooks
@@ -34,20 +48,19 @@ const Homepage = () => {
 
   const currentTime = useCurrentTime(50000);
   const MonthSelection = generateMonthSelection();
-
+  const motivation = useMemo(() => getMotivation(), []);
   // States
   const [notif, setNotif] = useState(false);
   const [todayAttendance, setTodayAttendance] = useState();
   const [selectedMonth, setSelectedMonth] = useState(MonthSelection[0]);
-  const [markAttendance, setMarkAttendance] = useState(false);
 
   // Fetch data
   const lastDay = useMemo(() => getLastDayOfMonth(selectedMonth.value), [selectedMonth.value]);
   const { responseData: TodayAttendance, refetch: AttendanceDataRefetch } = useFetch(`/attendance/today`);
   const { responseData: TodayEvent } = useFetch(`/event`);
-  const { responseData: notifications } = useFetch(`/notification/${profile.userId}`);
+  const { responseData: notifications } = useFetch(`/notification/${profile?.userId}`);
   const { responseData: AttendanceData } = useFetch(`/attendance/${profile?.userId}?startDate=${selectedMonth.value}&endDate=${lastDay}`);
-  const { responseData: ProfilePicture } = useFetch(`/employee/profile-picture/${profile.userId}`);
+  const { responseData: ProfilePicture } = useFetch(`/employee/profile-picture/${profile?.userId}`);
 
   // Derived Data
   const profilePicture = getProfilePicture(ProfilePicture, profile);
@@ -89,28 +102,111 @@ const Homepage = () => {
     loading: recordAttendanceLoading,
     error: recordAttendanceError,
   } = useFetch(`/attendance/send/${profile?.userId}`, { method: "POST" });
+  const [error, setError] = useState(false);
 
-  const handleRecordAttendance = useCallback(async () => {
-    const fp = await FingerprintJS.load();
-    const result = await fp.get();
-    const fingerprint = result.visitorId;
+  useEffect(() => {
+    if (recordAttendanceError) {
+      setError(true);
+      const timer = setTimeout(() => {
+        setError(false);
+      }, 2000);
 
-    const record = {
-      date: new Date().toLocaleDateString("en-CA"),
-      time: currentTime.format("HH:mm:ss"),
-      userId: profile.userId,
-      fingerprint,
-    };
-    const { success } = await recordAttendance(record);
-    if (success) {
-      AttendanceDataRefetch();
-      setMarkAttendance(false);
+      return () => clearTimeout(timer);
     }
-  }, [currentTime, profile.userId, recordAttendance, AttendanceDataRefetch]);
+  }, [recordAttendanceError]);
 
-  const handleAttendance = () => {
-    setMarkAttendance(true);
+  const isDisabled = () => {
+    const clockOut = todayAttendance?.clockOut;
+    const breakIn = todayAttendance?.breakIn;
+    const thresholdTime = { hour: 16, minute: 30 };
+    const isBeforeThreshold = breakIn && moment().isBefore(moment().set(thresholdTime));
+    return clockOut || (isBeforeThreshold && todayAttendance?.status !== "Pulang Awal") || todayAttendance?.status === "Izin Cuti";
   };
+
+  const [position, setPosition] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
+
+  const startSwipe = useCallback((e) => {
+    e.preventDefault();
+    setDragging(true);
+  }, []);
+
+  const onSwipe = (e) => {
+    if (dragging) {
+      const offsetX = e.clientX || e.touches[0].clientX;
+      const newPosition = Math.max(0, Math.min(window.innerWidth - 110, offsetX - 40));
+      setPosition(newPosition);
+
+      let threshold = window.innerWidth * 0.5;
+      if (window.innerWidth < 720) {
+        threshold = window.innerWidth * 0.4;
+      }
+      if (newPosition >= threshold && !hasFetched) {
+        doPostFetch();
+        setHasFetched(true);
+      }
+    }
+  };
+
+  const stopSwipe = () => {
+    setDragging(false);
+    setHasFetched(false);
+    if (!hasFetched) {
+      setPosition(0);
+    }
+  };
+
+  const doPostFetch = async () => {
+    try {
+      let fingerprint = localStorage.getItem("fingerprint");
+      if (!fingerprint) {
+        const fp = await FingerprintJS.load();
+        const result = await fp.get();
+        fingerprint = result.visitorId;
+
+        localStorage.setItem("fingerprint", fingerprint);
+      }
+      const record = {
+        date: new Date().toLocaleDateString("en-CA"),
+        time: currentTime.format("HH:mm:ss"),
+        userId: profile.userId,
+        fingerprint,
+      };
+
+      const { success } = await recordAttendance(record);
+
+      if (success) {
+        AttendanceDataRefetch();
+        setPosition(0);
+      }
+    } catch (error) {
+      console.error("Error during POST request:", error);
+    } finally {
+      setPosition(0);
+    }
+  };
+
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const startTime = moment("08:00", "HH:mm");
+    const endTime = moment("16:30", "HH:mm");
+    const interval = setInterval(() => {
+      const now = moment();
+      if (now.isAfter(endTime)) {
+        clearInterval(interval);
+        setProgress(100);
+      } else {
+        const totalDuration = endTime.diff(startTime);
+        const elapsedDuration = now.diff(startTime);
+        const progressPercentage = (elapsedDuration / totalDuration) * 100;
+        setProgress(progressPercentage);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <>
@@ -129,54 +225,126 @@ const Homepage = () => {
                 <NavLink to={"/settings"}>{profilePicture}</NavLink>
               </div>
             </div>
-            <div className="w-full px-4 pb-12">
-              <h1 className="text-white font-bold text-2xl">
-                {getGreeting()}, {profile?.fullName.split(" ").slice(1, 2).join(" ")}
-              </h1>
-              <p className="text-xs text-white">{getMotivation()}</p>
+            <div className="flex w-full items-center px-4 pb-12 justify-between">
+              <div className="w-full">
+                <h1 className="text-white font-bold text-2xl">
+                  {getGreeting()}, {profile?.fullName.split(" ").slice(1, 2).join(" ")}
+                </h1>
+                <p className="text-xs text-white">{motivation}</p>
+              </div>
             </div>
           </Layouts.Header>
 
-          <div className={`w-full top-40 ${markAttendance ? "fixed" : "absolute"} right-0  left-0 h-full bg-gray-100 z-10 rounded-t-3xl py-3`}>
+          <div className={`w-full top-40 absolute right-0 left-0 h-full bg-gray-100 z-10 rounded-t-3xl py-3`}>
             <div className="mx-auto w-16 h-1 rounded-full bg-slate-600"></div>
-            <div className="bg-gray-100 rounded-xl pb-6">
-              <div className="w-full px-5 flex justify-between items-center">
-                <h1 className="text-slate-900 text-xl font-semibold">Ringkasan</h1>
-                <div className="w-[45%]">
-                  <FormInput type="select" options={MonthSelection} value={selectedMonth} onChange={(selected) => setSelectedMonth(selected)} />
-                </div>
-              </div>
-
-              <div className="w-full mt-6 px-4">
-                <div className="flex justify-between items-center gap-2">
-                  {stats.map((stat, idx) => (
-                    <div
-                      key={idx}
-                      className={`${
-                        stat.label === "Kehadiran" ? "bg-slate-800" : stat.label === "Izin Cuti" ? "bg-indigo-600" : "bg-slate-600"
-                      } flex flex-col items-center gap-2 p-3  text-white rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 ease-in-out w-1/3`}
-                    >
-                      <h2 className="text-xs font-semibold text-slate-300">{stat.label}</h2>
-                      <h3 className="text-2xl font-bold text-white">{stat.value}</h3>
-                      <p className="text-xs text-white whitespace-nowrap">
-                        {stat.label === "Kehadiran" ? "Hari" : stat.label === "Izin Cuti" ? "Cuti Diambil" : "Hari"}
-                      </p>
+            <div className="bg-gray-100 pb-6 rounded-lg">
+              <div className="px-4 py-4">
+                <div className="px-6 py-3 bg-white shadow rounded-3xl">
+                  <div className="justify-between items-center flex w-full">
+                    <div className="flex flex-col gap-1 justify-center">
+                      <h1 className="text-slate-900 text-lg font-bold">{selectedMonth.label}</h1>
+                      <div className="flex items-center">
+                        <IconCalendarCheck />
+                        <h1 className="text-slate-700">Kehadiran</h1>
+                      </div>
+                      <h1 className="text-3xl font-bold text-indigo-600">{stats[0].value} Hari</h1>
                     </div>
-                  ))}
+
+                    <div className="flex justify-center">
+                      <CircularProgressBar
+                        baseColor="stroke-gray-300"
+                        strokeColor="stroke-indigo-500"
+                        radius={50}
+                        strokeWidth={15}
+                        text={currentTime.format("HH:mm")}
+                        progress={progress}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-4 mt-2 mb-2">
+                    <div className="w-full gap-3 flex items-center">
+                      <div className="w-1/2 rounded-2xl px-3 py-2 bg-red-500 flex  justify-between items-center text-white font-semibold">
+                        <div className="flex flex-col">
+                          <h1 className="text-sm">Absen</h1>
+                          <h1 className="text-lg font-bold">{stats[2].value} Hari</h1>
+                        </div>
+
+                        <IconCalendarOff />
+                      </div>
+                      <div className="w-1/2 rounded-2xl px-3 py-2 bg-yellow-500 flex  justify-between items-center text-white font-semibold">
+                        <div className="flex flex-col">
+                          <h1 className="text-sm">Izin/Cuti</h1>
+                          <h1 className="text-lg font-bold">{stats[1].value} Hari</h1>
+                        </div>
+
+                        <IconCalendarPause />
+                      </div>
+                    </div>
+
+                    <div className="w-full bg-slate-800 flex justify-between items-center rounded-3xl px-4 py-1">
+                      <div className="flex gap-4 items-center">
+                        <IconClockExclamation size={40} className="text-white text-xl" />
+                        <div className="flex flex-col">
+                          <h1 className="text-white text-sm">Keterlambatan</h1>
+                          <p className={`text-sm font-bold ${stats[3].value >= 30 ? "text-red-500" : "text-white"}`}>{stats[3].value}/30 Menit</p>
+                        </div>
+                      </div>
+                      <div className="flex justify-center items-center">
+                        <CircularProgressBar
+                          textSize={"text-xs"}
+                          bgTextColor={"none"}
+                          textColor="text-white"
+                          radius={24}
+                          strokeWidth={6}
+                          text={`${Math.min(Math.floor((stats[3].value / 30) * 100), 100)}%`}
+                          progress={Math.min(Math.floor((stats[3].value / 30) * 100), 100)}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="w-full mt-5 px-4">
-                <div className="w-full bg-white rounded-3xl shadow border px-5 py-4">
-                  <div className="flex justify-between">
-                    <h1 className="text-sm text-slate-800 font-semibold">{formatDate(new Date())}</h1>
-                    <NavLink to={"/leave/request"} className={"flex text-xs px-3 py-1 rounded-xl items-center bg-slate-800 text-white gap-2"}>
-                      <IconPlus size={12} />
-                      Izin Cuti
+              <div className="px-4 pb-4">
+                <div className="px-2 py-3 flex items-center justify-between gap-2 bg-white shadow rounded-3xl">
+                  <div>
+                    <NavLink
+                      to={"/leave/request"}
+                      className="px-3 py-2.5 flex w-full whitespace-nowrap items-center gap-2 flex-row-reverse text-white font-bold bg-indigo-500 rounded-full"
+                    >
+                      <p className="text-sm">Izin Cuti</p>
+                      <IconCalendarPause size={18} />
                     </NavLink>
                   </div>
 
-                  {/* Attendance Sections */}
+                  <div>
+                    <NavLink
+                      to={"/payslip"}
+                      className="px-3 py-2.5 flex w-full whitespace-nowrap items-center gap-2 flex-row-reverse text-white font-bold bg-indigo-500 rounded-full"
+                    >
+                      <p className="text-sm">Slip Gaji</p>
+                      <IconReceipt size={18} />
+                    </NavLink>
+                  </div>
+
+                  <div>
+                    <NavLink
+                      to={"/calendar"}
+                      className="p-2.5 flex w-full whitespace-nowrap items-center gap-2 flex-row-reverse text-white font-bold bg-indigo-500 rounded-full"
+                    >
+                      <p className="text-sm">Kalender</p>
+                      <IconCalendar size={18} />
+                    </NavLink>
+                  </div>
+                </div>
+              </div>
+
+              <div className="w-full px-4">
+                <div className="w-full bg-white rounded-3xl shadow border px-5 py-4">
+                  <div className="flex justify-between">
+                    <h1 className="text-sm text-slate-800 font-semibold">{formatDate(new Date())}</h1>
+                  </div>
                   <div className="mt-4 pl-3 w-full">
                     {TodayEvent && TodayEvent?.type === "Holiday" ? (
                       <div className="flex flex-col items-center w-full justify-center pb-4 mt-12">
@@ -279,83 +447,66 @@ const Homepage = () => {
                       </>
                     )}
                   </div>
-
-                  {!TodayEvent && (
-                    <button
-                      onClick={handleAttendance}
-                      disabled={todayAttendance?.clockOut}
-                      className={`w-full bg-gradient-to-br from-indigo-600 to-indigo-500 text-white border border-zinc-200 px-5 flex justify-between items-center shadow py-3 mt-6 rounded-xl ${
-                        todayAttendance?.clockOut ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
+                  {!isDisabled() && (
+                    <div
+                      className="w-full mt-6"
+                      onMouseMove={onSwipe}
+                      onTouchMove={onSwipe}
+                      onMouseUp={stopSwipe}
+                      onTouchEnd={stopSwipe}
+                      onMouseDown={startSwipe}
+                      onTouchStart={startSwipe}
                     >
-                      <div className="flex flex-col text-start">
-                        <h1 className="text-lg font-semibold">
-                          {(() => {
-                            if (todayAttendance?.clockIn && !todayAttendance?.breakOut) {
-                              return "Beristirahat";
-                            } else if (todayAttendance?.breakOut && !todayAttendance?.breakIn) {
-                              return "Selesai Istirahat";
-                            } else if (todayAttendance?.breakIn && !todayAttendance?.clockOut) {
-                              return "Pulang";
-                            } else if ((todayAttendance?.clockIn, todayAttendance?.clockOut, todayAttendance?.breakIn, todayAttendance?.breakOut)) {
-                              return "Selesai";
-                            } else {
-                              return "Masuk";
-                            }
-                          })()}
-                        </h1>
-
-                        <p className="text-xs">Jam {currentTime.format("HH:mm")}</p>
+                      <div className="bg-slate-100 w-full rounded-full p-2 relative">
+                        <div className="absolute inset-0 flex items-center justify-center text-center z-0">
+                          <p className="text-slate-500">
+                            {(() => {
+                              if (todayAttendance?.clockIn && !todayAttendance?.breakOut) {
+                                return "Isitrahat";
+                              } else if (todayAttendance?.breakOut && !todayAttendance?.breakIn) {
+                                return "Selesai Istirahat";
+                              } else if (todayAttendance?.breakIn && !todayAttendance?.clockOut) {
+                                return "Pulang";
+                              } else if ((todayAttendance?.clockIn, todayAttendance?.clockOut, todayAttendance?.breakIn, todayAttendance?.breakOut)) {
+                                return "Selesai";
+                              } else {
+                                return "Masuk";
+                              }
+                            })()}
+                          </p>
+                        </div>
+                        <div
+                          className="bg-indigo-500 z-10 flex items-center justify-center text-white font-bold h-12 w-12 rounded-full cursor-pointer"
+                          style={{ transform: `translateX(${position}px)` }}
+                        >
+                          {recordAttendanceLoading ? (
+                            <div className="animate-spin">
+                              <IconLoader2 />
+                            </div>
+                          ) : (
+                            <IconArrowRight />
+                          )}
+                        </div>
                       </div>
-
-                      <IconClockPlay />
-                    </button>
+                    </div>
                   )}
                 </div>
               </div>
             </div>
           </div>
         </Layouts>
-        {markAttendance && (
+        {error && (
           <>
             <div className="fixed inset-0 bg-black bg-opacity-50 z-10"></div>
             <div className="fixed bottom-0 bg-white w-full h-96 z-20 animate-slideUp rounded-t-2xl px-5 py-5">
               <div className="flex items-center justify-center flex-col">
-                {recordAttendanceError ? (
-                  <div className="text-center">
-                    <img src={Forbidden} className="w-48 mx-auto mt-4" alt="Attendance Error" />
-                    <p className="mt-4 text-xs text-red-600 font-semibold">
-                      Waduh! Sistem mendeteksi ada ketidaksesuaian pada absensi Anda. Silakan coba lagi atau hubungi admin jika membutuhkan bantuan.
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      onClick={handleRecordAttendance}
-                      className="w-52 h-52 flex items-center justify-center bg-gradient-to-br from-indigo-500 to-indigo-400 border-4 border-zinc-100 shadow-md rounded-full"
-                      disabled={recordAttendanceLoading}
-                    >
-                      {recordAttendanceLoading ? (
-                        <IconLoader2 size={90} stroke={0.5} className="text-white animate-spin" />
-                      ) : (
-                        <IconHandClick size={90} stroke={0.5} className="text-white" />
-                      )}
-                    </button>
-                    <div className="mt-6 text-center">
-                      <h1 className="text-2xl font-bold text-zinc-600">{currentTime.format("HH:mm")}</h1>
-                      <p className="text-sm text-zinc-400">Waktu Sekarang</p>
-                    </div>
-                  </>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => setMarkAttendance(false)}
-                  className="w-full font-semibold bg-indigo-500 text-white text-center py-2 rounded-xl mt-5"
-                >
-                  Kembali
-                </button>
+                <div className="text-center">
+                  <img src={Forbidden} className="w-48 mx-auto mt-12" alt="Attendance Error" />
+                  <p className="mt-4 text-xs text-red-600 font-semibold">
+                    Mohon maaf, sistem mendeteksi ada ketidaksesuaian pada absensi Anda. Silakan coba lagi atau hubungi admin jika membutuhkan
+                    bantuan.
+                  </p>
+                </div>
               </div>
             </div>
           </>
@@ -383,3 +534,33 @@ const AttendanceItem = ({ time, label, statusLabel, status, icon, statusClass, i
 );
 
 export default Homepage;
+
+// <button
+//   onClick={handleAttendance}
+//   disabled={isDisabled()}
+//   className={`w-full bg-gradient-to-br from-indigo-600 to-indigo-500 text-white border border-zinc-200 px-5 flex justify-between items-center shadow py-3 mt-6 rounded-xl ${
+//     isDisabled() ? "opacity-50 cursor-not-allowed" : ""
+//   }`}
+// >
+//   <div className="flex flex-col text-start">
+//     <h1 className="text-lg font-semibold">
+//       {(() => {
+//         if (todayAttendance?.clockIn && !todayAttendance?.breakOut) {
+//           return "Beristirahat";
+//         } else if (todayAttendance?.breakOut && !todayAttendance?.breakIn) {
+//           return "Selesai Istirahat";
+//         } else if (todayAttendance?.breakIn && !todayAttendance?.clockOut) {
+//           return "Pulang";
+//         } else if ((todayAttendance?.clockIn, todayAttendance?.clockOut, todayAttendance?.breakIn, todayAttendance?.breakOut)) {
+//           return "Selesai";
+//         } else {
+//           return "Masuk";
+//         }
+//       })()}
+//     </h1>
+
+//     <p className="text-xs">Jam {currentTime.format("HH:mm")}</p>
+//   </div>
+
+//   <IconClockPlay />
+// </button>

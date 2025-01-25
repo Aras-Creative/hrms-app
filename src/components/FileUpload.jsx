@@ -62,8 +62,6 @@ const FileUpload = ({ label, updateFilesCb, error }) => {
     updateFilesCb(updatedFiles);
   };
 
-  console.log(error);
-
   return (
     <>
       <div
@@ -71,10 +69,10 @@ const FileUpload = ({ label, updateFilesCb, error }) => {
           isDragging ? "border-indigo-500" : error ? "border-red-500" : "border-gray-400"
         } cursor-pointer`}
       >
-        {/* Button and text are conditionally hidden when files are uploaded */}
         {files.length === 0 ? (
           <>
             <button
+              type="button"
               onClick={() => fileInputRef.current.click()}
               className="bg-slate-800 rounded-lg text-white py-2 px-4 hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-opacity-75"
             >

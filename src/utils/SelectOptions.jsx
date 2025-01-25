@@ -218,7 +218,7 @@ export const attendanceFilter = [
   { label: "Terlambat", value: "Terlambat" },
   { label: "Hadir", value: "Hadir" },
   { label: "Istirahat", value: "Istirahat" },
-  { label: "Pulang Awal", value: "Pulang Awal" },
+  { label: "Pulang Awal", value: "Pulang awal" },
   { label: "Cuti/Izin", value: "Izin Cuti" },
   { label: "Tidak Masuk", value: "Tidak Masuk" },
 ];

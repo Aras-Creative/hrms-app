@@ -5,7 +5,8 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: "#f43f5e",
+        primary: "#14181d",
+        dark: "#070b0f",
       },
       keyframes: {
         slideIn: {

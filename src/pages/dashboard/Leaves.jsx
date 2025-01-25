@@ -8,7 +8,7 @@ import { NavLink } from "react-router-dom";
 import { toTitleCase } from "../../utils/toTitleCase";
 import { Loading } from "../../components/Preloaders";
 import Toast from "../../components/Toast";
-import { formatDate } from "../../utils/dateUtils";
+import { formatDate, formatTimeOnly } from "../../utils/dateUtils";
 import FormInput from "../../components/FormInput";
 import { mappedLeavesData } from "../../utils/mappedSummaryData";
 import { InternalServerError, NotFound } from "../../components/Errors";
@@ -76,21 +76,21 @@ const Leaves = () => {
         icon: <IconUserFilled />,
         render: (value, rowData) => {
           if (!rowData) return <span>Loading...</span>;
-          const profileImage = value.profilePicture && `${STORAGE_URL}/document/${rowData?.userId}/${value.profilePicture.path}`;
+          const profileImage = value?.profilePicture && `${STORAGE_URL}/document/${rowData?.userId}/${value.profilePicture.path}`;
           return (
             <div className="flex items-center gap-3">
-              {value.profilePicture && profileImage ? (
+              {value?.profilePicture && profileImage ? (
                 <div className="w-10 h-10 rounded-full overflow-hidden">
                   <img src={profileImage} alt={`${value}'s Profile`} className="w-full h-full object-cover" />
                 </div>
               ) : (
                 <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-slate-800 text-sm">
-                  {value.fullName[0]?.toUpperCase() || "?"}
+                  {value?.fullName[0]?.toUpperCase() || "?"}
                 </div>
               )}
               <div className="flex flex-col">
-                <span className="font-bold">{value.fullName}</span>
-                <p className="text-sm text-slate-800">{value.employeeId}</p>
+                <span className="font-bold">{value?.fullName}</span>
+                <p className="text-sm text-slate-800">{value?.employeeId}</p>
               </div>
             </div>
           );
@@ -101,11 +101,15 @@ const Leaves = () => {
         label: "Durasi",
         render: (value, rowData) => (
           <div className="w-full flex items-center gap-3 whitespace-nowrap">
-            <h1 className={`text-slate-800 text-sm`}>{formatDate(rowData?.startDate) || "N/A"}</h1>
+            <h1 className={`text-slate-800 text-sm`}>
+              {rowData?.leaveType === "izin_keluar" ? `Jam ${formatTimeOnly(rowData?.startDate)}` : formatDate(rowData?.startDate) || "N/A"}
+            </h1>
             <div className="flex items-center gap-1">
-              <span className="text-xs text-zinc-400">ke</span>
+              <span className="text-xs text-zinc-400">s/d</span>
             </div>
-            <h1 className={`text-slate-800 text-sm`}>{formatDate(rowData?.endDate) || "N/A"}</h1>
+            <h1 className={`text-slate-800 text-sm`}>
+              {rowData?.leaveType === "izin_keluar" ? `Jam ${formatTimeOnly(rowData?.endDate)}` : formatDate(rowData?.endDate) || "N/A"}
+            </h1>
           </div>
         ),
       },
@@ -138,9 +142,9 @@ const Leaves = () => {
           if (!value) return <span>No attachment</span>;
           return (
             <NavLink
-              to={`${STORAGE_URL}/document/${rowData?.userId}/${value}`}
+              to={`${STORAGE_URL}/document/attachment/${value}`}
               target="_blank"
-              className={`whitespace-nowrap text-xs px-2 inline-flex py-0.5 gap-2 items-center rounded-xl ${
+              className={`whitespace-nowrap max-w-36 truncate text-xs px-2 inline-flex py-0.5 gap-2 items-center rounded-xl ${
                 value === "Late" || value === "Early Clock Out" || value === "Absent"
                   ? "bg-red-100 text-red-500"
                   : value === "Break Time"
@@ -242,7 +246,10 @@ const Leaves = () => {
                   { label: "100 Employees", value: 100 },
                 ]}
                 value={{ label: `${pageSize} Employees`, value: pageSize }}
-                onChange={(e) => dispatch({ type: "SET_PAGE_SIZE", payload: e.value })}
+                onChange={(e) => {
+                  dispatch({ type: "SET_PAGE_SIZE", payload: e.value });
+                  dispatch({ type: "SET_PAGE", payload: 1 });
+                }}
               />
             </div>
           </div>

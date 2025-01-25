@@ -16,15 +16,19 @@ export const RequestNotificationPermission = async () => {
   }
 };
 
-export const showDesktopNotification = (data) => {
+export const showDesktopNotification = ({ data }) => {
   if (Notification.permission === "granted") {
-    const notification = new Notification(data.title || "New Notification", {
+    const notification = new Notification(data.title, {
       body: data.message || "You have a new notification.",
       icon: "/image/aras-logo.webp",
     });
 
     notification.onclick = () => {
-      window.focus();
+      if (data.url) {
+        window.open(data.url);
+      } else {
+        window.focus();
+      }
       notification.close();
     };
   }
