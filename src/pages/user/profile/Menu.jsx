@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import Layouts from "./Layouts";
 import useAuth from "../../../hooks/useAuth";
 import { getBankImage, getBPJSImage } from "../../../utils/bankImages";
 import {
+  IconAlertCircle,
   IconChevronRight,
   IconFileDescription,
   IconHelpCircleFilled,
@@ -14,13 +15,12 @@ import {
 import { NavLink } from "react-router-dom";
 import useFetch from "../../../hooks/useFetch";
 import { getProfilePicture } from "../../../utils/userUtils";
+import BottomNavigation from "../../../components/BottomNav";
+import AutoCloseModal from "../../../components/AutoCloseModal";
 
 const SettingsMenu = ({ path, icon, label }) => {
   return (
-    <NavLink
-      to={path}
-      className="flex w-full items-center justify-between hover:bg-zinc-100 transition-all duration-300 ease-in-out rounded-xl px-4 py-3"
-    >
+    <NavLink to={path} className="flex w-full items-center justify-between hover:bg-zinc-100 transition-all duration-300 ease-in-out rounded-xl px-4 py-3">
       <div className="flex gap-5 items-center">
         <div className="p-2 rounded-full bg-indigo-100 text-sm text-indigo-700">{icon}</div>
         <h1 className="font-semibold text-slate-800">{label}</h1>
@@ -29,12 +29,19 @@ const SettingsMenu = ({ path, icon, label }) => {
     </NavLink>
   );
 };
+
 const Menu = () => {
+  const [logoutModal, setLogoutModal] = useState(false);
   const { profile, logout } = useAuth();
-  const { responseData: ProfilePicture } = useFetch(`/employee/profile-picture/${profile.userId}`);
+  const { responseData: ProfilePicture } = useFetch(`/employee/profile-picture/${profile?.userId}`);
   const bankImage = getBankImage(profile?.bankName);
   const handleLogout = () => {
+    setLogoutModal(false);
     logout();
+  };
+
+  const handleClickLogout = () => {
+    setLogoutModal(true);
   };
 
   return (
@@ -132,11 +139,7 @@ const Menu = () => {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="w-full bg-white border hover:bg-zinc-100 transition-all duration-300 ease-in-out rounded-xl px-5 py-4 mb-6"
-          >
+          <button type="button" onClick={handleClickLogout} className="w-full bg-white border hover:bg-zinc-100 transition-all duration-300 ease-in-out rounded-xl px-5 py-4 mb-6">
             <div className="flex flex-col gap-4">
               <div className="flex w-full items-center justify-between">
                 <div className="flex gap-5 items-center">
@@ -151,12 +154,17 @@ const Menu = () => {
           </button>
         </div>
 
-        <div className=" text-center text-xs text-slate-600 pb-6">
+        <div className=" text-center text-xs text-slate-600 pb-24">
           &copy; {new Date().getFullYear()} Sekantor by Aras Creative. All rights reserved.
           <br />
           Version 1.0.0
         </div>
+        <BottomNavigation />
       </div>
+
+      {logoutModal && (
+        <AutoCloseModal duration={5000} onClose={handleLogout} actionLabel="Konfirmasi" icon={<IconAlertCircle className="mx-auto text-yellow-500 w-16 h-16 mb-4" />} />
+      )}
     </Layouts>
   );
 };

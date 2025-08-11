@@ -8,7 +8,7 @@ const TermsCondition = () => {
         <h1 className="text-2xl font-bold mb-4 text-start">Syarat dan Ketentuan Aplikasi HRMS Sekantor by Aras Creative</h1>
         <p className="text-lg mb-4">
           <strong className="text-gray-600">Tanggal Berlaku:</strong>{" "}
-          {new Date("2025-01-13").toLocaleDateString("id-ID", {
+          {new Date("2025-02-01").toLocaleDateString("id-ID", {
             year: "numeric",
             month: "long",
             day: "2-digit",

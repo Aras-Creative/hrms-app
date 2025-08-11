@@ -155,12 +155,9 @@ const SalaryModal = ({ employeeId, handleClose, isVisible, periode, refetch }) =
     }));
   };
 
-  const { submitData: postSalary, loading: postSalaryLoading } = useFetch(
-    `/employee/salary/${employeeId}/update?month=${periode?.formattedPeriode}`,
-    {
-      method: "POST",
-    }
-  );
+  const { submitData: postSalary, loading: postSalaryLoading } = useFetch(`/employee/salary/${employeeId}/update?month=${periode?.formattedPeriode}`, {
+    method: "POST",
+  });
 
   const handleSubmit = async () => {
     const { success, error } = await postSalary(salaryAdjustment);
@@ -174,15 +171,11 @@ const SalaryModal = ({ employeeId, handleClose, isVisible, periode, refetch }) =
 
   return (
     <div className="fixed inset-0 z-20 flex items-start justify-end">
-      <div
-        className={`absolute inset-0 bg-black transition-opacity duration-500 ${isVisible ? "opacity-50" : "opacity-0"}`}
-        onClick={handleCloseModal}
-      ></div>
+      <div className={`absolute inset-0 bg-black transition-opacity duration-500 ${isVisible ? "opacity-50" : "opacity-0"}`} onClick={handleCloseModal}></div>
       <div
         className={`relative bg-white rounded-l-xl h-screen overflow-y-scroll scrollbar-none shadow-lg 2xl:w-[70%] xl:w-[100%] lg:w-[100%] md:w-[100%] sm:w-[100%] ${
           isVisible ? "animate-slideIn" : "animate-slideOut"
-        }`}
-      >
+        }`}>
         <div className="w-full flex bg-white items-center justify-between px-6 py-4 border-b border-zinc-300">
           <h2 className="text-xl font-bold text-gray-800 text-end">Rekap Kehadiran dan Payroll</h2>
 
@@ -195,9 +188,7 @@ const SalaryModal = ({ employeeId, handleClose, isVisible, periode, refetch }) =
             {data?.profilePicture ? (
               <img src={`${STORAGE_URL}/document/${data?.userId}/${data?.profilePicture?.path}`} className="w-20 h-20 rounded-full object-cover" />
             ) : (
-              <div className="w-20 h-20 rounded-full bg-gray-300 flex items-center justify-center text-slate-800 text-3xl font-bold">
-                {data?.fullName[0] || "?"}
-              </div>
+              <div className="w-20 h-20 rounded-full bg-gray-300 flex items-center justify-center text-slate-800 text-3xl font-bold">{data?.fullName[0] || "?"}</div>
             )}
             <div className="flex items-start gap-2 flex-col">
               <h1 className="text-lg font-bold">{data?.fullName}</h1>
@@ -223,8 +214,7 @@ const SalaryModal = ({ employeeId, handleClose, isVisible, periode, refetch }) =
               <button
                 type="button"
                 onClick={addAdjustment}
-                className="text-white font-semibold text-sm px-3 py-2 bg-emerald-700 rounded-xl inline-flex items-center gap-1 hover:underline hover:bg-emerald-900 transition-all duration-300 ease-in-out"
-              >
+                className="text-white font-semibold text-sm px-3 py-2 bg-emerald-700 rounded-xl inline-flex items-center gap-1 hover:underline hover:bg-emerald-900 transition-all duration-300 ease-in-out">
                 <IconPlus size={18} />
                 <p>Tambah</p>
               </button>
@@ -262,8 +252,7 @@ const SalaryModal = ({ employeeId, handleClose, isVisible, periode, refetch }) =
                     <button
                       type="button"
                       onClick={addAdjustment}
-                      className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 transition duration-200"
-                    >
+                      className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 transition duration-200">
                       Cancel
                     </button>
                     <button
@@ -274,8 +263,7 @@ const SalaryModal = ({ employeeId, handleClose, isVisible, periode, refetch }) =
                         addAdjustmentInput(addNewAdjustmentForm.name, addNewAdjustmentForm.type);
                       }}
                       type="button"
-                      className="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 transition duration-200"
-                    >
+                      className="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 transition duration-200">
                       Add
                     </button>
                   </div>
@@ -395,8 +383,7 @@ const SalaryModal = ({ employeeId, handleClose, isVisible, periode, refetch }) =
               <button
                 type="button"
                 onClick={handleSubmit}
-                className="bg-emerald-700 text-white font-semibold hover:bg-emerald-800 transition-all duration-300 ease-in-out px-3 py-2 rounded-lg"
-              >
+                className="bg-emerald-700 text-white font-semibold hover:bg-emerald-800 transition-all duration-300 ease-in-out px-3 py-2 rounded-lg">
                 Simpan
               </button>
             </div>
@@ -494,17 +481,50 @@ const Statistics = ({ data }) => {
     { label: "Terlambat", value: 0, max: 0 },
     { label: "Tidak Masuk", value: 0, max: 0 },
     { label: "Keterlambatan", value: 0, max: 0 },
+    { label: "is_max_late", value: 0, max: 0 },
   ];
 
-  data?.forEach((entry) => {
-    const statusIndex = stats.findIndex((stat) => stat.label === entry.status);
-    if (statusIndex !== -1) {
-      stats[statusIndex].value += 1;
+  if (data && data.length > 0) {
+    data.forEach((entry) => {
+      if (entry.status) {
+        const statusIndex = stats.findIndex((stat) => stat.label === entry.status);
+        if (statusIndex !== -1) {
+          stats[statusIndex].value += 1;
+        }
+      }
+    });
+
+    const sortedData = [...data].sort((a, b) => {
+      const dateA = new Date(`${a.date || ""} ${a.createdAt ? a.createdAt.split(" ")[1] : "00:00:00"}`);
+      const dateB = new Date(`${b.date || ""} ${b.createdAt ? b.createdAt.split(" ")[1] : "00:00:00"}`);
+
+      const timeA = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
+      const timeB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
+
+      return timeA - timeB;
+    });
+
+    const latestAttendanceEntry = sortedData[sortedData.length - 1];
+
+    if (latestAttendanceEntry) {
+      const quotaMinutes = 30;
+
+      const latenessFromLatest = latestAttendanceEntry.lateness ?? 0;
+      const maxLateTimesFromLatest = latestAttendanceEntry.max_late_times ?? 0;
+
+      const actualTotalLateMinutes = maxLateTimesFromLatest * quotaMinutes + latenessFromLatest;
+
+      const keterlambatanStat = stats.find((stat) => stat.label === "Keterlambatan");
+      if (keterlambatanStat) {
+        keterlambatanStat.value = actualTotalLateMinutes;
+      }
+
+      const isMaxLateStat = stats.find((stat) => stat.label === "is_max_late");
+      if (isMaxLateStat) {
+        isMaxLateStat.value = maxLateTimesFromLatest;
+      }
     }
-    if (entry.lateness) {
-      stats.find((stat) => stat.label === "Keterlambatan").value += entry.lateness;
-    }
-  });
+  }
 
   const totalAttendance = data?.length || 0;
 
@@ -512,32 +532,50 @@ const Statistics = ({ data }) => {
     stat.max = totalAttendance;
   });
 
-  const latenessPercentage = Math.min(Math.floor((stats[5].value / 30) * 100), 100);
+  const totalKeterlambatanAktual = stats.find((stat) => stat.label === "Keterlambatan")?.value || 0;
+  const quotaMinutes = 30;
+  const currentLatenessInCycle = totalKeterlambatanAktual % quotaMinutes;
+
+  const latenessPercentage = Math.min(Math.floor((currentLatenessInCycle / quotaMinutes) * 100), 100);
+
+  const formatMinutesToHumanReadable = (totalMinutes) => {
+    if (totalMinutes < 0) return "0 Menit"; // Handle negative values if somehow possible
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    let result = "";
+    if (hours > 0) {
+      result += `${hours} Jam `;
+    }
+    result += `${minutes} Menit`; // Always show minutes, even if zero
+    return result.trim(); // Remove trailing space if only minutes are shown
+  };
 
   return (
     <>
       <div className="p-6 w-2/3">
         <div className="space-y-2">
           {stats
-            .filter((stat) => stat.label !== "Keterlambatan")
+            .filter((stat) => stat.label !== "Keterlambatan" && stat.label !== "is_max_late")
             .map((stat, index) => (
               <ProgressBar key={index} label={stat.label} value={stat.value} max={stat.max} />
             ))}
         </div>
       </div>
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col py-2 items-center">
         <p className="text-sm text-zinc-900">Keterlambatan</p>
-
         <CircularProgressBar
           textSize={"text-lg"}
           bgTextColor={"none"}
           strokeColor="stroke-blue-500"
           textColor="text-slate-800"
-          radius={40}
-          strokeWidth={13}
-          text={`${Math.min(Math.floor((stats[5].value / 30) * 100), 100)}%`}
+          radius={35}
+          strokeWidth={10}
+          text={`${latenessPercentage}%`}
           progress={latenessPercentage}
         />
+        <p className="text-sm text-center text-zinc-900">{stats.find((stat) => stat.label === "is_max_late")?.value || 0} x melebihi batas waktu</p>
+        <p className="text-xs text-center text-zinc-600">Total Menit: {formatMinutesToHumanReadable(totalKeterlambatanAktual)}</p>
       </div>
     </>
   );

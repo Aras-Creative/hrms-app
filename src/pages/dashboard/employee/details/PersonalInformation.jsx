@@ -95,6 +95,9 @@ const PersonalInformation = ({ data, refetch }) => {
             onCancel={() => handleCancelEdit("personalInfo")}
             toggleEdit={(e) => toggleFormEdit(e, "personalInfo")}
           >
+            <div className="w-full mt-6 px-3">
+              <FormInput type="text" label="NIK KTP" value={data?.noktp} onEdit={false} />
+            </div>
             <div className="mt-6 w-full grid grid-cols-2 px-3 gap-6 pb-4">
               <FormInput
                 type="text"

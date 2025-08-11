@@ -33,13 +33,3 @@ body {
   font-family: "Euclid", sans-serif;
   background-color: #f4f4f5;
 }
-
-/* Utility untuk menghilangkan scrollbar */
-.scrollbar-none {
-  -ms-overflow-style: none; /* Internet Explorer 10+ */
-  scrollbar-width: none; /* Firefox */
-}
-
-.scrollbar-none::-webkit-scrollbar {
-  display: none; /* Safari dan Chrome */
-}

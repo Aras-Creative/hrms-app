@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import DashboardLayouts from "../../layouts/DashboardLayouts";
 import {
+  IconAlarm,
   IconArrowLeft,
   IconArrowRight,
   IconBriefcase2,
@@ -93,14 +94,22 @@ const Dashboard = () => {
   }, [filterStatus, currentPage, pageSize]);
 
   useEffect(() => {
-    const socket = io(`${BASE_API_URL}admin`, { withCredentials: true, transports: ["websocket", "polling"] });
+    const socket = io(`${BASE_API_URL}admin`, {
+      withCredentials: true,
+      transports: ["websocket", "polling"],
+    });
 
     socket.on("new_attendance", (data) => {
       setAttendances((prevAttendances) => {
-        const existingIndex = prevAttendances.findIndex((att) => att.employeeId === data.attendance.employeeId);
+        const existingIndex = prevAttendances.findIndex(
+          (att) => att.employeeId === data.attendance.employeeId
+        );
         if (existingIndex !== -1) {
           const updatedAttendances = [...prevAttendances];
-          updatedAttendances[existingIndex] = { ...updatedAttendances[existingIndex], ...data.attendance };
+          updatedAttendances[existingIndex] = {
+            ...updatedAttendances[existingIndex],
+            ...data.attendance,
+          };
           return updatedAttendances;
         }
         return [data.attendance, ...prevAttendances];
@@ -112,7 +121,9 @@ const Dashboard = () => {
     return () => socket.disconnect();
   }, []);
 
-  const { attendanceData, notPresentData } = mappedAttendanceData(attendancesData?.monthAttendance || {});
+  const { attendanceData, notPresentData } = mappedAttendanceData(
+    attendancesData?.monthAttendance || {}
+  );
 
   const employeeColumns = useMemo(
     () => [
@@ -122,12 +133,21 @@ const Dashboard = () => {
         icon: <IconUser />,
         render: (value, rowData) => {
           if (!rowData) return <span>Loading...</span>;
-          const profileImage = rowData.profilePicture && `${STORAGE_URL}/document/${rowData.userId}/${rowData.profilePicture}`;
+          const profileImage =
+            rowData.profilePicture &&
+            `${STORAGE_URL}/document/${rowData.userId}/${rowData.profilePicture}`;
           return (
             <div className="flex items-center gap-3">
               {profileImage ? (
-                <NavLink to={`/dashboard/employee/${rowData?.userId}/details`} className="w-10 h-10 rounded-full overflow-hidden">
-                  <img src={profileImage} alt={`${value}'s Profile`} className="w-full h-full object-cover" />
+                <NavLink
+                  to={`/dashboard/employee/${rowData?.userId}/details`}
+                  className="w-10 h-10 rounded-full overflow-hidden"
+                >
+                  <img
+                    src={profileImage}
+                    alt={`${value}'s Profile`}
+                    className="w-full h-full object-cover"
+                  />
                 </NavLink>
               ) : (
                 <NavLink
@@ -150,13 +170,27 @@ const Dashboard = () => {
         label: "Jam masuk & Jam pulang",
         render: (value, rowData) => (
           <div className="w-full flex items-center gap-3 whitespace-nowrap">
-            <h1 className={`${checkTime(rowData?.clockIn, "08:00:00") ? "text-red-500" : "text-slate-800"} text-sm `}>{rowData?.clockIn || "N/A"}</h1>
+            <h1
+              className={`${
+                checkTime(rowData?.clockIn, "08:00:00")
+                  ? "text-red-500"
+                  : "text-slate-800"
+              } text-sm `}
+            >
+              {rowData?.clockIn || "N/A"}
+            </h1>
             <div className="flex items-center gap-1">
               <div className="flex items-center">
                 <span className="w-2 h-2 bg-zinc-400 rounded-full"></span>
                 <span className="w-6 h-0.5 bg-zinc-400"></span>
               </div>
-              <p className={`${rowData?.status === "Break Time" ? "text-teal-500 " : "text-zinc-400"} text-xs`}>
+              <p
+                className={`${
+                  rowData?.status === "Break Time"
+                    ? "text-teal-500 "
+                    : "text-zinc-400"
+                } text-xs`}
+              >
                 {calculateDuration(rowData?.clockIn, rowData?.clockOut)}
               </p>
               <div className="flex items-center">
@@ -164,7 +198,13 @@ const Dashboard = () => {
                 <span className="w-2 h-2 bg-zinc-400 rounded-full"></span>
               </div>
             </div>
-            <h1 className={`${checkTime(rowData?.clockOut, "16:30:00", true) ? "text-slate-800" : " text-red-500"} text-sm`}>
+            <h1
+              className={`${
+                checkTime(rowData?.clockOut, "16:30:00", true)
+                  ? "text-slate-800"
+                  : " text-red-500"
+              } text-sm`}
+            >
               {rowData?.clockOut || "N/A"}
             </h1>
           </div>
@@ -177,13 +217,22 @@ const Dashboard = () => {
         render: (value) => value || "N/A",
       },
       {
+        key: "workingHours",
+        label: "Jam Kerja",
+        icon: <IconAlarm />,
+        render: (value) =>
+          `${value?.clockIn || "N/A"} - ${value?.clockOut || "N/A"}`,
+      },
+      {
         key: "status",
         label: "Status",
         icon: <IconGraph />,
         render: (value) => (
           <span
             className={`${
-              value === "Terlambat" || value === "Pulang Awal" || value === "Tidak Masuk"
+              value === "Terlambat" ||
+              value === "Pulang Awal" ||
+              value === "Tidak Masuk"
                 ? "bg-red-100 text-red-500"
                 : value === "Istirahat"
                 ? "bg-teal-100 text-teal-600"
@@ -215,13 +264,20 @@ const Dashboard = () => {
       <div className="w-full mb-8 flex items-center justify-between">
         <div className="w-full flex items-center gap-3">
           <div className="pr-4 border-r border-slate-300">
-            <h1 className="text-3xl font-bold text-slate-800">Data Kehadiran</h1>
+            <h1 className="text-3xl font-bold text-slate-800">
+              Data Kehadiran
+            </h1>
           </div>
           <div className="pl-4 flex items-center gap-4">
-            <button onClick={() => handleDateChange(-1)} className="bg-white p-1 text-xs text-slate-800 hover:bg-zinc-100 rounded-lg border">
+            <button
+              onClick={() => handleDateChange(-1)}
+              className="bg-white p-1 text-xs text-slate-800 hover:bg-zinc-100 rounded-lg border"
+            >
               <IconArrowLeft />
             </button>
-            <h1 className="font-bold text-slate-800">{formatDate(currentDate)}</h1>
+            <h1 className="font-bold text-slate-800">
+              {formatDate(currentDate)}
+            </h1>
             <button
               onClick={() => handleDateChange(1)}
               type="button"
@@ -234,7 +290,13 @@ const Dashboard = () => {
         </div>
         <div className="flex justify-end gap-3 items-center">
           <button
-            onClick={() => handleDownloadFile("/document/download-attendance", "attendance-report.xlsx", setToast)}
+            onClick={() =>
+              handleDownloadFile(
+                "/document/download-attendance",
+                "attendance-report.xlsx",
+                setToast
+              )
+            }
             className="bg-white flex gap-2 transition-all duration-300 ease-in-out text-zinc-500 border whitespace-nowrap px-3 py-2 rounded-lg hover:bg-gray-100 text-sm font-semibold"
           >
             <IconDownload /> Download Laporan Kehadiran
@@ -246,13 +308,33 @@ const Dashboard = () => {
       </div>
 
       <div className="w-full flex gap-3 mb-8">
-        <SummaryCard width={"w-1/2"} title="Rekap Data Kehadiran" icon={<IconClipboardCheck />} items={attendanceData} />
-        <SummaryCard width={"w-1/2"} title="Rekap Data Absensi" icon={<IconClipboardX />} items={notPresentData} />
+        <SummaryCard
+          width={"w-1/2"}
+          title="Rekap Data Kehadiran"
+          icon={<IconClipboardCheck />}
+          items={attendanceData}
+        />
+        <SummaryCard
+          width={"w-1/2"}
+          title="Rekap Data Absensi"
+          icon={<IconClipboardX />}
+          items={notPresentData}
+        />
       </div>
       <div className="w-full flex justify-end items-center mb-5">
         <div className="flex gap-3 items-center">
-          <FormInput type="select" options={jobRoleOptions} placeholder={"Select Job Role"} onChange={(e) => setJobRole(e.value)} />
-          <FormInput type="select" placeholder={"Filter Status"} options={attendanceFilter} onChange={(e) => setFilterStatus(e.value)} />
+          <FormInput
+            type="select"
+            options={jobRoleOptions}
+            placeholder={"Select Job Role"}
+            onChange={(e) => setJobRole(e.value)}
+          />
+          <FormInput
+            type="select"
+            placeholder={"Filter Status"}
+            options={attendanceFilter}
+            onChange={(e) => setFilterStatus(e.value)}
+          />
           <FormInput
             type="select"
             options={[
@@ -277,13 +359,30 @@ const Dashboard = () => {
         <InternalServerError />
       ) : attendanceData?.length > 0 ? (
         <>
-          <Table title="Employee Table" icon="fa-users" columns={employeeColumns} data={attendances || []} />
-          {attendancesDataPages > 1 && <Pagination currentPage={currentPage} totalPages={attendancesDataPages} onPageChange={handlePageChange} />}
+          <Table
+            title="Employee Table"
+            icon="fa-users"
+            columns={employeeColumns}
+            data={attendances || []}
+          />
+          {attendancesDataPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={attendancesDataPages}
+              onPageChange={handlePageChange}
+            />
+          )}
         </>
       ) : (
         <NotFound />
       )}
-      {toast.message !== "" && <Toast type={toast.type} text={toast.message} onClick={() => setToast({ type: "", message: "" })} />}
+      {toast.message !== "" && (
+        <Toast
+          type={toast.type}
+          text={toast.message}
+          onClick={() => setToast({ type: "", message: "" })}
+        />
+      )}
     </DashboardLayouts>
   );
 };

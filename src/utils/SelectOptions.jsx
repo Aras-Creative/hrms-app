@@ -216,11 +216,11 @@ export const SalaryTypeOptions = [
 export const attendanceFilter = [
   { label: "Pilih Filter", value: null },
   { label: "Terlambat", value: "Terlambat" },
+  { label: "Tidak Hadir", value: "Tidak Hadir" },
   { label: "Hadir", value: "Hadir" },
   { label: "Istirahat", value: "Istirahat" },
   { label: "Pulang Awal", value: "Pulang awal" },
   { label: "Cuti/Izin", value: "Izin Cuti" },
-  { label: "Tidak Masuk", value: "Tidak Masuk" },
 ];
 
 export const statusOptions = [

@@ -14,8 +14,8 @@ const STAT_TYPES = [
 ];
 
 const currentDate = new Date();
-const MAX_MONTH = currentDate.getMonth() + 1; // This is the current month
-const MIN_MONTH = currentDate.getMonth(); // The previous month
+const MAX_MONTH = currentDate.getMonth() + 1;
+const MIN_MONTH = currentDate.getMonth();
 
 // Utility Functions
 const formatDate = (date, options) => {
@@ -73,7 +73,7 @@ const StatCard = ({ label, current, previous }) => {
   );
 };
 
-const AttendanceStats = ({ sendAttendanceData, periode }) => {
+const AttendanceStats = ({ sendAttendanceData, periode, setDateRanges }) => {
   const { employeeId } = useParams();
   const [dateRange, setDateRange] = useState(() => {
     const today = new Date();
@@ -100,6 +100,10 @@ const AttendanceStats = ({ sendAttendanceData, periode }) => {
       }
     }
   }, [attendancesData]);
+
+  useEffect(() => {
+    setDateRanges(dateRange);
+  }, [dateRange]);
 
   const handleMonthChange = (action) => {
     let [year, month] = selectedMonth.split("-").map(Number);

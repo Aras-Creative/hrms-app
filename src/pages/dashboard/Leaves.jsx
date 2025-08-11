@@ -80,17 +80,17 @@ const Leaves = () => {
           return (
             <div className="flex items-center gap-3">
               {value?.profilePicture && profileImage ? (
-                <div className="w-10 h-10 rounded-full overflow-hidden">
+                <div className="w-8 h-8 rounded-full overflow-hidden">
                   <img src={profileImage} alt={`${value}'s Profile`} className="w-full h-full object-cover" />
                 </div>
               ) : (
-                <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-slate-800 text-sm">
+                <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-slate-800 text-sm">
                   {value?.fullName[0]?.toUpperCase() || "?"}
                 </div>
               )}
               <div className="flex flex-col">
-                <span className="font-bold">{value?.fullName}</span>
-                <p className="text-sm text-slate-800">{value?.employeeId}</p>
+                <span className="font-bold text-sm">{value?.fullName}</span>
+                <p className="text-xs text-slate-800">{value?.employeeId}</p>
               </div>
             </div>
           );
@@ -100,15 +100,29 @@ const Leaves = () => {
         icon: <IconCalendarTime />,
         label: "Durasi",
         render: (value, rowData) => (
-          <div className="w-full flex items-center gap-3 whitespace-nowrap">
-            <h1 className={`text-slate-800 text-sm`}>
-              {rowData?.leaveType === "izin_keluar" ? `Jam ${formatTimeOnly(rowData?.startDate)}` : formatDate(rowData?.startDate) || "N/A"}
+          <div className="w-full flex items-center gap-2 whitespace-nowrap">
+            <h1 className={`text-slate-800 text-xs`}>
+              {rowData?.leaveType === "izin_keluar"
+                ? `Jam ${formatTimeOnly(rowData?.startDate)}`
+                : new Date(rowData?.startDate).toLocaleDateString("id-ID", {
+                    year: "numeric",
+                    month: "short",
+                    weekday: "short",
+                    day: "numeric",
+                  }) || "N/A"}
             </h1>
             <div className="flex items-center gap-1">
               <span className="text-xs text-zinc-400">s/d</span>
             </div>
-            <h1 className={`text-slate-800 text-sm`}>
-              {rowData?.leaveType === "izin_keluar" ? `Jam ${formatTimeOnly(rowData?.endDate)}` : formatDate(rowData?.endDate) || "N/A"}
+            <h1 className={`text-slate-800 text-xs`}>
+              {rowData?.leaveType === "izin_keluar"
+                ? `Jam ${formatTimeOnly(rowData?.endDate)}`
+                : new Date(rowData?.endDate).toLocaleDateString("id-ID", {
+                    year: "numeric",
+                    month: "short",
+                    weekday: "short",
+                    day: "numeric",
+                  }) || "N/A"}
             </h1>
           </div>
         ),
@@ -125,14 +139,14 @@ const Leaves = () => {
             default: "bg-gray-50 text-gray-500 border-gray-500",
           };
           const style = typeStyles[value] || typeStyles.default;
-          return <div className={`${style} justify-center inline-flex px-3 py-1 rounded-full border`}>{toTitleCase(value)}</div>;
+          return <div className={`${style} justify-center text-xs inline-flex px-1.5 py-1 rounded-full border`}>{toTitleCase(value)}</div>;
         },
       },
       {
         key: "reason",
-        label: "Alasan",
+        label: "Catatan",
         icon: <IconBubbleText />,
-        render: (value) => value || "N/A",
+        render: (value) => <div className="text-xs w-52 whitespace-normal overflow-hidden">{value || "N/A"}</div>,
       },
       {
         key: "attachment",
@@ -144,7 +158,7 @@ const Leaves = () => {
             <NavLink
               to={`${STORAGE_URL}/document/attachment/${value}`}
               target="_blank"
-              className={`whitespace-nowrap max-w-36 truncate text-xs px-2 inline-flex py-0.5 gap-2 items-center rounded-xl ${
+              className={`w-24 overflow-hidden whitespace-nowrap truncate text-xs px-2 flex py-0.5 gap-2 items-center rounded-xl ${
                 value === "Late" || value === "Early Clock Out" || value === "Absent"
                   ? "bg-red-100 text-red-500"
                   : value === "Break Time"
@@ -154,7 +168,7 @@ const Leaves = () => {
                   : "bg-blue-100 text-blue-600"
               }`}
             >
-              {value}
+              <div className="w-24 overflow-hidden whitespace-nowrap truncate">{value}</div>
             </NavLink>
           );
         },

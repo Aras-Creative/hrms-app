@@ -45,18 +45,6 @@ export const AuthProvider = ({ children }) => {
     skip: !auth.token || !isTokenValid(auth.token),
   });
 
-  const {
-    responseData: settingsData,
-    loading: settingsLoading,
-    error: settingsError,
-    refetch: settingsRefetch,
-  } = useFetch("/dashboard/settings", {
-    headers: {
-      Authorization: `Bearer ${auth.token}`,
-    },
-    skip: !auth.token || !isTokenValid(auth.token),
-  });
-
   useEffect(() => {
     if (auth.token && !isTokenValid(auth.token)) {
       logout();
@@ -95,7 +83,6 @@ export const AuthProvider = ({ children }) => {
       user: null,
     });
     setProfile(null);
-    setSettingsPreference(null);
   };
 
   return (
@@ -108,7 +95,6 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         profileRefetch,
-        settingsRefetch,
       }}
     >
       {children}

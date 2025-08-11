@@ -29,6 +29,10 @@ export default {
           "0%": { opacity: "1" },
           "100%": { opacity: "0" },
         },
+        "fade-in-scale": {
+          "0%": { opacity: "0", transform: "scale(0.95)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
       },
       animation: {
         slideIn: "slideIn 0.5s ease-in-out forwards",
@@ -36,6 +40,7 @@ export default {
         "fade-in": "fadeIn 0.5s ease-in-out",
         "fade-out": "fadeOut 1s ease-in-out",
         slideUp: "slideUp 0.4s ease-out",
+        "fade-in-scale": "fade-in-scale 0.3s ease-out",
       },
     },
     // screen: {

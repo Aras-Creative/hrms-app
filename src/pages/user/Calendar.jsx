@@ -5,6 +5,7 @@ import moment from "moment";
 import useFetch from "../../hooks/useFetch";
 import { IconCalendar, IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import Layouts from "./profile/Layouts";
+import BottomNavigation from "../../components/BottomNav";
 
 const localizer = momentLocalizer(moment);
 const UserCalendar = () => {
@@ -101,8 +102,7 @@ const CustomHeader = (props) => {
         color: "#4F46E5",
         textAlign: "center",
         padding: "8px 0",
-      }}
-    >
+      }}>
       {dayOfWeek}
     </div>
   );
@@ -118,26 +118,24 @@ const CustomToolbar = (toolbarProps) => {
       <button
         onClick={() => onNavigate("PREV")}
         className="flex items-center justify-center p-3 rounded-full bg-indigo-500 text-white hover:bg-indigo-600 transition duration-300 ease-in-out"
-        style={{ minWidth: "16px", height: "16px" }}
-      >
+        style={{ minWidth: "16px", height: "16px" }}>
         <IconChevronLeft size={12} />
       </button>
 
       <button
         onClick={() => onNavigate("TODAY")}
         className="flex items-center justify-center p-3 rounded-full bg-indigo-500 text-white hover:bg-indigo-600 transition duration-300 ease-in-out"
-        style={{ minWidth: "16px", height: "16px" }}
-      >
+        style={{ minWidth: "16px", height: "16px" }}>
         <span className="text-xs text-white font-semibold ">{currentMonth}</span>
       </button>
 
       <button
         onClick={() => onNavigate("NEXT")}
         className="flex items-center justify-center p-3 rounded-full bg-indigo-500 text-white hover:bg-indigo-600 transition duration-300 ease-in-out"
-        style={{ minWidth: "16px", height: "16px" }}
-      >
+        style={{ minWidth: "16px", height: "16px" }}>
         <IconChevronRight size={12} />
       </button>
+      <BottomNavigation />
     </div>
   );
 };

@@ -5,6 +5,7 @@ import { IconArrowLeft, IconArrowRight, IconDownload } from "@tabler/icons-react
 import useFetch from "../../hooks/useFetch";
 import { formatCurrency } from "../../utils/formatCurrency";
 import { handleDownloadFile } from "../../utils/handleDownloadFile";
+import BottomNavigation from "../../components/BottomNav";
 
 const currentDate = new Date();
 const MAX_MONTH = currentDate.getMonth() + 1;
@@ -80,11 +81,8 @@ const Payslip = () => {
                 type="button"
                 disabled={periode.formattedPeriode === `${currentDate.getFullYear()}-${String(MIN_MONTH).padStart(2, "0")}`}
                 className={`bg-white p-1 text-xs text-slate-800 hover:bg-zinc-100 transition-all duration-300 ease-in-out rounded-lg border border-slate-400 ${
-                  periode.formattedPeriode === `${currentDate.getFullYear()}-${String(MIN_MONTH).padStart(2, "0")}`
-                    ? "opacity-50 cursor-not-allowed"
-                    : ""
-                }`}
-              >
+                  periode.formattedPeriode === `${currentDate.getFullYear()}-${String(MIN_MONTH).padStart(2, "0")}` ? "opacity-50 cursor-not-allowed" : ""
+                }`}>
                 <IconArrowLeft />
               </button>
               <h1 className="font-bold text-slate-800">{periode?.formattedPeriodeForUi}</h1>
@@ -93,11 +91,8 @@ const Payslip = () => {
                 type="button"
                 disabled={periode.formattedPeriode === `${currentDate.getFullYear()}-${String(MAX_MONTH).padStart(2, "0")}`}
                 className={`bg-white p-1 text-xs text-slate-800 hover:bg-zinc-100 transition-all duration-300 ease-in-out rounded-lg border border-slate-400 ${
-                  periode.formattedPeriode === `${currentDate.getFullYear()}-${String(MAX_MONTH).padStart(2, "0")}`
-                    ? "opacity-50 cursor-not-allowed"
-                    : ""
-                }`}
-              >
+                  periode.formattedPeriode === `${currentDate.getFullYear()}-${String(MAX_MONTH).padStart(2, "0")}` ? "opacity-50 cursor-not-allowed" : ""
+                }`}>
                 <IconArrowRight />
               </button>
             </div>
@@ -145,11 +140,7 @@ const Payslip = () => {
           <>
             <div className="flex items-center justify-between mt-5">
               <h1 className="text-xl font-semibold">Rincian</h1>
-              <button
-                type="button"
-                onClick={handleDownloadPayslip}
-                className="px-3 py-2 rounded-xl hover:bg-indigo-700 focus:bg-indigo-700 bg-indigo-500 flex items-center gap-2"
-              >
+              <button type="button" onClick={handleDownloadPayslip} className="px-3 py-2 rounded-xl hover:bg-indigo-700 focus:bg-indigo-700 bg-indigo-500 flex items-center gap-2">
                 <IconDownload className="text-white" size={20} />
                 <p className="text-white text-sm">Download Slip Gaji</p>
               </button>
@@ -186,9 +177,7 @@ const Payslip = () => {
                   <div key={index} className="flex w-full items-center justify-between">
                     <p className="text-xs w-2/3 overflow-hidden whitespace-nowrap truncate font-semibold">{item.name}</p>
                     <p className="text-xs">
-                      {item.amountType === "percent"
-                        ? formatCurrency(parseFloat(item.amount / 100) * parseInt(employeeData?.payrolls?.basicSalary))
-                        : formatCurrency(item.amount)}
+                      {item.amountType === "percent" ? formatCurrency(parseFloat(item.amount / 100) * parseInt(employeeData?.payrolls?.basicSalary)) : formatCurrency(item.amount)}
                     </p>
                   </div>
                 ))}
@@ -201,6 +190,7 @@ const Payslip = () => {
           </>
         )}
       </div>
+      <BottomNavigation />
     </Layouts>
   );
 };

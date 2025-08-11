@@ -4,7 +4,7 @@ import NoData from "../assets/error/no-data.webp";
 const Table = ({ columns, data }) => {
   return (
     <div className="table-container">
-      <div className="rounded-lg w-full overflow-hidden">
+      <div className="rounded-lg w-full overflow-x-auto">
         {data.length > 0 ? (
           <table className="table-auto w-full border">
             <thead>

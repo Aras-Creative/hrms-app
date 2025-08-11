@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import AttendanceStats from "./AttendanceStats";
+import moment from "moment/moment";
 
 const TimeManagement = () => {
   const [attendanceData, setAttendanceData] = useState([]);
@@ -10,7 +11,7 @@ const TimeManagement = () => {
   };
 
   const formatDate = (date) => {
-    return date ? new Date(date).toLocaleDateString("en-GB", { weekday: "long", day: "numeric" }) : null;
+    return date ? new Date(date).toLocaleDateString("id-ID", { weekday: "long", day: "numeric" }) : null;
   };
 
   const calculateDuration = (clockIn, clockOut, breakIn, breakOut) => {
@@ -27,24 +28,19 @@ const TimeManagement = () => {
     return `${hours}h ${minutes}m`;
   };
 
-  useEffect(() => {
-    const today = new Date();
-    const startDate = new Date(today);
-    startDate.setDate(1);
-    setDateRange({
-      startDate: startDate.toLocaleDateString("en-CA"),
-      endDate: today.toLocaleDateString("en-CA"),
-    });
-  }, []);
   const generateMonthlyAttendance = (attendanceData) => {
-    const month = new Date().getMonth() + 1;
-    const year = new Date().getFullYear();
-    const daysInMonth = new Date(year, month, 0).getDate();
+    let { startDate, endDate } = dateRange;
 
+    const start = new Date(startDate);
+    if (moment(start).isSame(moment(), "month") && moment(start).isSame(moment(), "year")) {
+      endDate = moment().endOf("month").format("YYYY-MM-DD");
+    }
+
+    const end = new Date(endDate);
     const template = [];
 
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    while (start <= end) {
+      const date = start.toISOString().split("T")[0];
       const record = attendanceData.find((item) => item.date === date);
 
       template.push(
@@ -52,7 +48,7 @@ const TimeManagement = () => {
           ? { ...record }
           : {
               date: date,
-              status: "Belum Absen",
+              status: "Tidak Masuk",
               attendanceId: null,
               breakIn: null,
               breakOut: null,
@@ -65,14 +61,18 @@ const TimeManagement = () => {
               userId: null,
             }
       );
+
+      start.setDate(start.getDate() + 1);
     }
 
     return template;
   };
 
+  console.log(dateRange);
+
   return (
     <div className="w-full">
-      <AttendanceStats sendAttendanceData={handleAttendanceData} />
+      <AttendanceStats sendAttendanceData={handleAttendanceData} setDateRanges={setDateRange} />
 
       <div className="w-full flex flex-col gap-3 mt-6">
         {generateMonthlyAttendance(attendanceData).map((attendance, idx) => (
@@ -86,7 +86,7 @@ const TimeManagement = () => {
 const AttendanceCard = ({ attendance, dateRange, formatDate, calculateDuration }) => {
   return (
     <div className="w-full bg-white rounded-lg p-6 border border-zinc-200 overflow-hidden">
-      <h1 className="w-full text-sm font-bold text-slate-800">{attendance.date === dateRange.endDate ? "Hari Ini" : formatDate(attendance.date)}</h1>
+      <h1 className="w-full text-sm font-bold text-slate-800">{formatDate(attendance.date)}</h1>
       <div className="mt-3 w-full flex items-center gap-4">
         <AttendanceDetail label="Jam Masuk" time={attendance.clockIn} status={attendance.status} />
         <div className="grow w-full pl-4 border-l border-zinc-300">

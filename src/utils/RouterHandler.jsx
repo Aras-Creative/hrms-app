@@ -6,6 +6,8 @@ import { Loading } from "../components/Preloaders";
 import Payslip from "../pages/user/Payslip";
 import Success from "../pages/user/Success";
 import UserCalendar from "../pages/user/Calendar";
+import Shift from "../pages/dashboard/Shift";
+import Summary from "../pages/dashboard/Summary";
 
 const Login = React.lazy(() => import("../pages/Login"));
 const Dashboard = React.lazy(() => import("../pages/dashboard/Dashboard"));
@@ -31,6 +33,9 @@ const JobRole = React.lazy(() => import("../pages/dashboard/JobRole"));
 const PrivacyPolicy = React.lazy(() => import("../pages/user/profile/PrivacyPolicy"));
 const TermsCondition = React.lazy(() => import("../pages/user/profile/TermsCondition"));
 const FAQ = React.lazy(() => import("../pages/user/profile/FAQ"));
+const ChangeDevice = React.lazy(() => import("../pages/dashboard/ChangeDevice"));
+const AttendanceCalendar = React.lazy(() => import("../pages/user/AttendanceCalendar"));
+const Activity = React.lazy(() => import("../pages/user/Activity"));
 
 function RouterHandler() {
   const navigate = useNavigate();
@@ -48,11 +53,12 @@ function RouterHandler() {
             <Route path="login" element={<Login />} />
           </Route>
 
-          {/* User Routes */}
           <Route element={<UserPrivateRoute />}>
             <Route path="homepage" element={<Homepage />} />
             <Route path="settings" element={<Menu />} />
             <Route path="calendar" element={<UserCalendar />} />
+            <Route path="activity" element={<Activity />} />
+            <Route path="calendar-attendance" element={<AttendanceCalendar />} />
             <Route path="me" element={<Details />} />
             <Route path="security">
               <Route path="" element={<Security />} />
@@ -81,10 +87,13 @@ function RouterHandler() {
                 <Route path="contract" element={<CreateEmployeeContract />} />
               </Route>
               <Route path="jobrole" element={<JobRole />} />
+              <Route path="shift" element={<Shift />} />
+              <Route path="summary" element={<Summary />} />
               <Route path="settings" element={<Settings />} />
               <Route path="payroll" element={<Payroll />} />
               <Route path="calendar" element={<MyCalendar />} />
               <Route path="leaves" element={<Leaves />} />
+              <Route path="change-device" element={<ChangeDevice />} />
               <Route path="document">
                 <Route path="" element={<Documents />} />
                 <Route path=":path" element={<Files />} />

@@ -1,46 +1,38 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Layouts from "./Layouts";
 import {
-  IconCircleCheckFilled,
-  IconTransferIn,
-  IconMapPinFilled,
-  IconCoffee,
-  IconCircle,
-  IconCoffeeOff,
-  IconTransferOut,
-  IconCircleXFilled,
-  IconBellFilled,
-  IconPlus,
-  IconClockPlay,
-  IconHandClick,
   IconLoader2,
-  IconArrowRight,
-  IconCalendarCheck,
-  IconClockOff,
-  IconClockExclamation,
-  IconCalendarOff,
-  IconCalendarCode,
-  IconCalendarPause,
-  IconMichelinBibGourmand,
-  IconReceipt,
-  IconMinus,
-  IconX,
-  IconCalendar,
+  IconClockPlay,
+  IconCircleX,
+  IconCircleCheck,
+  IconSun,
+  IconBriefcase,
+  IconBell,
+  IconFingerprint,
+  IconClock,
+  IconCalendarExclamation,
+  IconAlertCircle,
+  IconClockStop,
 } from "@tabler/icons-react";
-import { NavLink } from "react-router-dom";
+import { Link } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
 import useFetch from "../../hooks/useFetch";
-import RestDayIMG from "../../assets/user/restday.webp";
+
 import { initializeSocket } from "../../utils/WebSocket";
-import { formatDate, generateMonthSelection, getGreeting, getLastDayOfMonth, getMotivation } from "../../utils/dateUtils";
+import { generateMonthSelection, getLastDayOfMonth, getMotivation } from "../../utils/dateUtils";
 import { useCurrentTime } from "../../hooks/useCurrentTime";
 import { getAttendanceStats, getProfilePicture } from "../../utils/userUtils";
-import FormInput from "../../components/FormInput";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
-import Forbidden from "../../assets/error/403.webp";
 import { BASE_API_URL } from "../../config";
 import moment from "moment";
-import CircularProgressBar from "../../components/CircularProgressBar";
+import "moment/locale/id";
+
+import { format, parseISO } from "date-fns";
+import BottomNavigation from "../../components/BottomNav";
+import AutoCloseModal from "../../components/AutoCloseModal";
+import subtleTexture from "../../assets/texture/subtle.jpg";
+import Shortcut from "../../components/Shortcut";
+import { id } from "date-fns/locale";
 
 const Homepage = () => {
   // Hooks
@@ -48,11 +40,11 @@ const Homepage = () => {
 
   const currentTime = useCurrentTime(50000);
   const MonthSelection = generateMonthSelection();
-  const motivation = useMemo(() => getMotivation(), []);
   // States
   const [notif, setNotif] = useState(false);
   const [todayAttendance, setTodayAttendance] = useState();
   const [selectedMonth, setSelectedMonth] = useState(MonthSelection[0]);
+  const [successModal, setSuccessModal] = useState(false);
 
   // Fetch data
   const lastDay = useMemo(() => getLastDayOfMonth(selectedMonth.value), [selectedMonth.value]);
@@ -61,6 +53,7 @@ const Homepage = () => {
   const { responseData: notifications } = useFetch(`/notification/${profile?.userId}`);
   const { responseData: AttendanceData } = useFetch(`/attendance/${profile?.userId}?startDate=${selectedMonth.value}&endDate=${lastDay}`);
   const { responseData: ProfilePicture } = useFetch(`/employee/profile-picture/${profile?.userId}`);
+  const { responseData: activities } = useFetch(`/employee/activities/${profile?.userId}`);
 
   // Derived Data
   const profilePicture = getProfilePicture(ProfilePicture, profile);
@@ -97,11 +90,7 @@ const Homepage = () => {
     return cleanupSocket;
   }, [profile?.userId, AttendanceDataRefetch]);
 
-  const {
-    submitData: recordAttendance,
-    loading: recordAttendanceLoading,
-    error: recordAttendanceError,
-  } = useFetch(`/attendance/send/${profile?.userId}`, { method: "POST" });
+  const { submitData: recordAttendance, loading: recordAttendanceLoading, error: recordAttendanceError } = useFetch(`/attendance/send/${profile?.userId}`, { method: "POST" });
   const [error, setError] = useState(false);
 
   useEffect(() => {
@@ -117,44 +106,23 @@ const Homepage = () => {
 
   const isDisabled = () => {
     const clockOut = todayAttendance?.clockOut;
+    const clockIn = todayAttendance?.clockIn;
     const breakIn = todayAttendance?.breakIn;
-    const thresholdTime = { hour: 16, minute: 30 };
-    const isBeforeThreshold = breakIn && moment().isBefore(moment().set(thresholdTime));
-    return clockOut || (isBeforeThreshold && todayAttendance?.status !== "Pulang Awal") || todayAttendance?.status === "Izin Cuti";
-  };
-
-  const [position, setPosition] = useState(0);
-  const [dragging, setDragging] = useState(false);
-  const [hasFetched, setHasFetched] = useState(false);
-
-  const startSwipe = useCallback((e) => {
-    e.preventDefault();
-    setDragging(true);
-  }, []);
-
-  const onSwipe = (e) => {
-    if (dragging) {
-      const offsetX = e.clientX || e.touches[0].clientX;
-      const newPosition = Math.max(0, Math.min(window.innerWidth - 110, offsetX - 40));
-      setPosition(newPosition);
-
-      let threshold = window.innerWidth * 0.5;
-      if (window.innerWidth < 720) {
-        threshold = window.innerWidth * 0.4;
-      }
-      if (newPosition >= threshold && !hasFetched) {
-        doPostFetch();
-        setHasFetched(true);
-      }
-    }
-  };
-
-  const stopSwipe = () => {
-    setDragging(false);
-    setHasFetched(false);
-    if (!hasFetched) {
-      setPosition(0);
-    }
+    const startShiftTime = moment(profile?.workingHours?.clockIn, "HH:mm:ss");
+    const endShiftTime = moment(profile?.workingHours?.clockOut, "HH:mm:ss");
+    const breakTime = startShiftTime.clone().add(2, "hours");
+    const now = moment();
+    const breakMoment = moment(breakTime, "HH:mm");
+    const thresholdMoment = moment(endShiftTime, "HH:mm");
+    const isBeforeBreakTime = now.isBefore(breakMoment);
+    const isBeforeThreshold = breakIn && now.isBefore(thresholdMoment);
+    return (
+      clockOut ||
+      (isBeforeThreshold && todayAttendance?.status !== "Pulang Awal") ||
+      todayAttendance?.status === "Izin Cuti" ||
+      (isBeforeBreakTime && clockIn) ||
+      (TodayEvent && TodayEvent?.type === "Holiday")
+    );
   };
 
   const doPostFetch = async () => {
@@ -164,403 +132,483 @@ const Homepage = () => {
         const fp = await FingerprintJS.load();
         const result = await fp.get();
         fingerprint = result.visitorId;
-
         localStorage.setItem("fingerprint", fingerprint);
       }
       const record = {
         date: new Date().toLocaleDateString("en-CA"),
         time: currentTime.format("HH:mm:ss"),
-        userId: profile.userId,
+        userId: profile?.userId,
+        workingHours: profile?.workingHours,
         fingerprint,
       };
-
       const { success } = await recordAttendance(record);
-
       if (success) {
         AttendanceDataRefetch();
-        setPosition(0);
+        setSuccessModal(true);
       }
     } catch (error) {
-      console.error("Error during POST request:", error);
+      setError(true);
     } finally {
-      setPosition(0);
+      setError(false);
     }
   };
 
-  const [progress, setProgress] = useState(0);
+  const totalLatenessMinutes = stats.find((stat) => stat.label === "Keterlambatan").value;
+  const exceededTimes = stats.find((stat) => stat.label === "Exceded Times").value;
 
-  useEffect(() => {
-    const startTime = moment("08:00", "HH:mm");
-    const endTime = moment("16:30", "HH:mm");
-    const interval = setInterval(() => {
-      const now = moment();
-      if (now.isAfter(endTime)) {
-        clearInterval(interval);
-        setProgress(100);
-      } else {
-        const totalDuration = endTime.diff(startTime);
-        const elapsedDuration = now.diff(startTime);
-        const progressPercentage = (elapsedDuration / totalDuration) * 100;
-        setProgress(progressPercentage);
-      }
-    }, 1000);
+  const isOverQuota = exceededTimes > 0;
+  const quotaMinutes = 30;
+  const remainingLateness = Math.max(0, quotaMinutes - (totalLatenessMinutes % quotaMinutes));
 
-    return () => clearInterval(interval);
-  }, []);
+  console.log(stats);
+  AttendanceData?.attendanceStats?.thisMonthData?.forEach((entry) => {
+    const lateness = entry.lateness || 0;
+    const maxLate = entry.max_late_times || 0;
+    console.log(`Date: ${entry.date}, Lateness: ${lateness}, Max Late Times: ${maxLate}, Total: ${maxLate * 30 + lateness}`);
+  });
 
+  function formatTime(minutes) {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return hours > 0 ? `${hours} jam ${mins} menit` : `${mins} menit`;
+  }
+
+  const statusMap = {
+    Hadir: {
+      icon: <IconCircleCheck className="text-green-500" size={18} />,
+      color: "text-green-700",
+    },
+    Terlambat: {
+      icon: <IconClock className="text-yellow-500" size={18} />,
+      color: "text-yellow-700",
+    },
+    "Tidak Masuk": {
+      icon: <IconCircleX className="text-red-500" size={18} />,
+      color: "text-red-700",
+    },
+    "Izin Cuti": {
+      icon: <IconCalendarExclamation className="text-blue-500" size={18} />,
+      color: "text-blue-700",
+    },
+  };
+
+  const remainingTime = getRemainingTimeFromWorkingHours(profile?.workingHours);
   return (
     <>
-      <div className="relative">
+      <div>
         <Layouts>
-          <Layouts.Header bgColor="bg-slate-800" textColor="text-white">
-            <div className="w-full flex justify-between items-center px-4 py-6">
-              <img src="/image/sekantor-logo-mini.png" className="w-8" alt="Logo" />
-              <div className="flex gap-3 items-center">
-                <div className="relative">
-                  <NavLink to={"/notification"}>
-                    <IconBellFilled />
-                  </NavLink>
-                  {(hasUnreadNotification || notif) && <div className="absolute top-0 right-0 bg-red-500 p-1 rounded"></div>}
-                </div>
-                <NavLink to={"/settings"}>{profilePicture}</NavLink>
-              </div>
+          <div className="relative mb-12">
+            <Header showDot={hasUnreadNotification} profilePicture={profilePicture} profile={profile ?? {}} />
+            <div
+              className="py-20 px-4 h-88 text-white"
+              style={{
+                backgroundImage: `linear-gradient(to bottom, #818CF8, #6366F1),
+                url(${subtleTexture})`,
+                backgroundBlendMode: "multiply, normal",
+                backgroundSize: "cover, auto",
+                backgroundRepeat: "no-repeat, repeat",
+              }}>
+              <ShiftCard
+                jobRole={profile?.jobRole?.jobRoleTitle}
+                remainingTime={remainingTime}
+                status={todayAttendance?.status ?? "N/A"}
+                employeeId={profile?.employeeId}
+                employmentStatus={profile?.status}
+                shiftName={profile?.workingHours?.name}
+                endTime={todayAttendance?.clockOut}
+                startTime={todayAttendance?.clockIn}
+              />
             </div>
-            <div className="flex w-full items-center px-4 pb-12 justify-between">
-              <div className="w-full">
-                <h1 className="text-white font-bold text-2xl">
-                  {getGreeting()}, {profile?.fullName.split(" ").slice(1, 2).join(" ")}
-                </h1>
-                <p className="text-xs text-white">{motivation}</p>
-              </div>
-            </div>
-          </Layouts.Header>
-
-          <div className={`w-full top-40 absolute right-0 left-0 h-full bg-gray-100 z-10 rounded-t-3xl py-3`}>
-            <div className="mx-auto w-16 h-1 rounded-full bg-slate-600"></div>
-            <div className="bg-gray-100 pb-6 rounded-lg">
-              <div className="px-4 py-4">
-                <div className="px-6 py-3 bg-white shadow rounded-3xl">
-                  <div className="justify-between items-center flex w-full">
-                    <div className="flex flex-col gap-1 justify-center">
-                      <h1 className="text-slate-900 text-lg font-bold">{selectedMonth.label}</h1>
-                      <div className="flex items-center">
-                        <IconCalendarCheck />
-                        <h1 className="text-slate-700">Kehadiran</h1>
+            <div className="w-full mt-[-48px] relative z-10">
+              <div className="z-20 bg-white rounded-3xl overflow-y-auto p-3">
+                <div className="flex flex-col gap-4 bg-white rounded-xl px-4 py-4">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                        <IconCircleCheck className="w-4 h-4 text-green-600" />
                       </div>
-                      <h1 className="text-3xl font-bold text-indigo-600">{stats[0].value} Hari</h1>
+                      <div className="text-xs">
+                        <p className="text-gray-500">Kehadiran</p>
+                        <p className="font-semibold text-indigo-600">{stats[0].value} Hari</p>
+                      </div>
                     </div>
 
-                    <div className="flex justify-center">
-                      <CircularProgressBar
-                        baseColor="stroke-gray-300"
-                        strokeColor="stroke-indigo-500"
-                        radius={50}
-                        strokeWidth={15}
-                        text={currentTime.format("HH:mm")}
-                        progress={progress}
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center">
+                        <IconSun className="w-4 h-4 text-yellow-600" />
+                      </div>
+                      <div className="text-xs">
+                        <p className="text-gray-500">Izin & Cuti</p>
+                        <p className="font-semibold text-indigo-600">{stats[1].value} Hari</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                        <IconCircleX className="w-4 h-4 text-red-600" />
+                      </div>
+                      <div className="text-xs">
+                        <p className="text-gray-500">Absent</p>
+                        <p className="font-semibold text-indigo-600">{stats[2].value} Hari</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-indigo-50 px-4 py-3 rounded-xl shadow-sm flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center">
+                        <IconBriefcase className="w-5 h-5 text-indigo-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-indigo-700">{profile?.leave_quota?.[0]?.totalQuota ?? 0} Hari</p>
+                        <p className="text-xs text-gray-500">
+                          Kuota Cuti Tahunan • <span className="font-semibold">{profile?.leave_quota?.[0]?.year || new Date().getFullYear()}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="text-right text-xs">
+                      <p className="font-semibold text-orange-500">
+                        {profile?.leave_quota?.[0]?.used ?? 0} Hari <span className="text-gray-500 font-normal">digunakan</span>
+                      </p>
+                      <p className="font-semibold text-emerald-600">
+                        {(profile?.leave_quota?.[0]?.totalQuota ?? 0) - (profile?.leave_quota?.[0]?.used ?? 0)} Hari <span className="text-gray-500 font-normal">sisa</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white py-3">
+                    <p className="text-xs text-gray-500 mb-1">Keterlambatan bulan ini</p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm font-semibold text-indigo-600">
+                        <span>
+                          {formatTime(totalLatenessMinutes)} / {quotaMinutes} menit
+                        </span>
+                        <span className="text-[11px] font-normal text-gray-500">• {isOverQuota ? 0 : formatTime(remainingLateness)} tersisa</span>
+                      </div>
+
+                      {isOverQuota && <span className="text-[10px] text-red-500 font-medium bg-red-50 px-2 py-1 rounded-full">Batas Terlampaui {exceededTimes}X</span>}
+                    </div>
+
+                    {/* Progress bar selalu tampil, lebar max 100% */}
+                    <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                      <div
+                        className={`${isOverQuota ? "bg-red-500" : "bg-indigo-600"} h-2 rounded-full transition-all`}
+                        style={{ width: `${((totalLatenessMinutes % quotaMinutes) / quotaMinutes) * 100}%` }}
                       />
                     </div>
                   </div>
-
-                  <div className="flex flex-col gap-4 mt-2 mb-2">
-                    <div className="w-full gap-3 flex items-center">
-                      <div className="w-1/2 rounded-2xl px-3 py-2 bg-red-500 flex  justify-between items-center text-white font-semibold">
-                        <div className="flex flex-col">
-                          <h1 className="text-sm">Absen</h1>
-                          <h1 className="text-lg font-bold">{stats[2].value} Hari</h1>
-                        </div>
-
-                        <IconCalendarOff />
-                      </div>
-                      <div className="w-1/2 rounded-2xl px-3 py-2 bg-yellow-500 flex  justify-between items-center text-white font-semibold">
-                        <div className="flex flex-col">
-                          <h1 className="text-sm">Izin/Cuti</h1>
-                          <h1 className="text-lg font-bold">{stats[1].value} Hari</h1>
-                        </div>
-
-                        <IconCalendarPause />
-                      </div>
-                    </div>
-
-                    <div className="w-full bg-slate-800 flex justify-between items-center rounded-3xl px-4 py-1">
-                      <div className="flex gap-4 items-center">
-                        <IconClockExclamation size={40} className="text-white text-xl" />
-                        <div className="flex flex-col">
-                          <h1 className="text-white text-sm">Keterlambatan</h1>
-                          <p className={`text-sm font-bold ${stats[3].value >= 30 ? "text-red-500" : "text-white"}`}>{stats[3].value}/30 Menit</p>
-                        </div>
-                      </div>
-                      <div className="flex justify-center items-center">
-                        <CircularProgressBar
-                          textSize={"text-xs"}
-                          bgTextColor={"none"}
-                          textColor="text-white"
-                          radius={24}
-                          strokeWidth={6}
-                          text={`${Math.min(Math.floor((stats[3].value / 30) * 100), 100)}%`}
-                          progress={Math.min(Math.floor((stats[3].value / 30) * 100), 100)}
-                        />
-                      </div>
-                    </div>
-                  </div>
                 </div>
+                <Shortcut />
               </div>
 
-              <div className="px-4 pb-4">
-                <div className="px-2 py-3 flex items-center justify-between gap-2 bg-white shadow rounded-3xl">
-                  <div>
-                    <NavLink
-                      to={"/leave/request"}
-                      className="px-3 py-2.5 flex w-full whitespace-nowrap items-center gap-2 flex-row-reverse text-white font-bold bg-indigo-500 rounded-full"
-                    >
-                      <p className="text-sm">Izin Cuti</p>
-                      <IconCalendarPause size={18} />
-                    </NavLink>
-                  </div>
+              <div className="w-full mt-3 px-4 rounded-3xl py-4 bg-white">
+                <h3 className="text-base font-semibold text-gray-800 mb-3 flex justify-between items-center">
+                  Riwayat Kehadiran
+                  <Link to="/calendar-attendance" className="text-sm text-indigo-500 hover:underline">
+                    Lihat Semua
+                  </Link>
+                </h3>
 
-                  <div>
-                    <NavLink
-                      to={"/payslip"}
-                      className="px-3 py-2.5 flex w-full whitespace-nowrap items-center gap-2 flex-row-reverse text-white font-bold bg-indigo-500 rounded-full"
-                    >
-                      <p className="text-sm">Slip Gaji</p>
-                      <IconReceipt size={18} />
-                    </NavLink>
-                  </div>
+                <ul className="divide-y divide-gray-200">
+                  {AttendanceData?.lastWeekAttendance?.slice(0, 7).map((item) => {
+                    const status = statusMap[item.status] || {
+                      icon: <IconCircleX className="text-red-500" size={18} />,
+                      color: "text-gray-700",
+                    };
 
-                  <div>
-                    <NavLink
-                      to={"/calendar"}
-                      className="p-2.5 flex w-full whitespace-nowrap items-center gap-2 flex-row-reverse text-white font-bold bg-indigo-500 rounded-full"
-                    >
-                      <p className="text-sm">Kalender</p>
-                      <IconCalendar size={18} />
-                    </NavLink>
-                  </div>
-                </div>
+                    return (
+                      <li key={item.attendanceId} className="flex items-start gap-3 py-4">
+                        <div className="pt-1 shrink-0">{status.icon}</div>
+                        <div className="flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${status.color} bg-gray-100`}>{item.status}</span>
+                            {item.lateness > 0 && <span className="text-gray-500 font-normal text-xs">• Terlambat {formatTime(item.late_today ?? 0)}</span>}
+                          </div>
+
+                          <div className="text-sm text-gray-600">
+                            <span className="font-medium">{format(new Date(item.date), "eeee")}</span>, {format(new Date(item.date), "d MMM yyyy")}
+                          </div>
+
+                          <div className="text-xs text-gray-500 mt-0.5">
+                            Clock In: <span className="font-medium">{item.clockIn ?? "-"}</span> | Clock Out: <span className="font-medium">{item.clockOut ?? "-"}</span>
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
 
-              <div className="w-full px-4">
-                <div className="w-full bg-white rounded-3xl shadow border px-5 py-4">
-                  <div className="flex justify-between">
-                    <h1 className="text-sm text-slate-800 font-semibold">{formatDate(new Date())}</h1>
-                  </div>
-                  <div className="mt-4 pl-3 w-full">
-                    {TodayEvent && TodayEvent?.type === "Holiday" ? (
-                      <div className="flex flex-col items-center w-full justify-center pb-4 mt-12">
-                        <img src={RestDayIMG} alt="Rest Day" className="w-72 mb-4" />
-                        <div className="text-center">
-                          <h2 className="text-lg font-semibold text-gray-800">Hari Ini Adalah Hari Libur 🎉</h2>
-                          <p className=" text-gray-600 mb-2">Waktunya santai, nikmati liburmu!</p>
-                          <p className="text-sm font-medium text-blue-500">{TodayEvent.title}</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="w-full border-l border-zinc-400 pl-6">
-                          <AttendanceItem
-                            time={todayAttendance?.clockIn || "N/A"}
-                            label="Jam masuk"
-                            statusLabel={"Jam Masuk"}
-                            status={todayAttendance?.status === "Hadir" ? "Tepat Waktu" : todayAttendance?.status || "Belum ada"}
-                            statusIcon={
-                              todayAttendance?.status === "Terlambat" ? (
-                                <IconCircleXFilled className="text-red-500" />
-                              ) : todayAttendance?.clockIn ? (
-                                <IconCircleCheckFilled className="text-green-500" />
-                              ) : (
-                                <IconCircle className="text-zinc-400" />
-                              )
-                            }
-                            icon={<IconTransferIn />}
-                            statusClass={`${
-                              todayAttendance?.clockIn
-                                ? `bg-gradient-to-br ${
-                                    todayAttendance?.status !== "Hadir" ? "from-red-500 to-pink-600" : "from-green-500 to-teal-400"
-                                  } text-white`
-                                : "bg-zinc-50 text-zinc-600"
-                            }`}
-                            iconClass={`${todayAttendance?.clockIn ? "text-white" : "text-indigo-600"}`}
-                          />
-                          <AttendanceItem
-                            time={todayAttendance?.breakOut || "N/A"}
-                            label={`${todayAttendance?.breakOut ? `Mulai jam ${todayAttendance?.breakOut}` : "Belum dimulai"}`}
-                            status={`Jam ${currentTime.format("HH:mm")}`}
-                            statusIcon={
-                              todayAttendance?.breakIn ? (
-                                <IconCircleCheckFilled className="text-green-500" />
-                              ) : todayAttendance?.breakOut ? (
-                                <IconMapPinFilled className="text-indigo-500" />
-                              ) : (
-                                <IconCircle className="text-zinc-400" />
-                              )
-                            }
-                            icon={<IconCoffee />}
-                            statusLabel={"Istirahat"}
-                            statusClass={`${
-                              todayAttendance?.breakIn
-                                ? "bg-gradient-to-br from-green-500 to-teal-400 text-white"
-                                : todayAttendance?.breakOut
-                                ? "bg-gradient-to-bl from-indigo-700 to-indigo-500 text-white"
-                                : "bg-zinc-50 text-zinc-600"
-                            }`}
-                            iconClass={`${todayAttendance?.breakOut ? "text-white" : "text-indigo-600"}`}
-                          />
-
-                          <AttendanceItem
-                            time={todayAttendance?.breakIn || "N/A"}
-                            label="Istirahat selesai"
-                            status={`Jam ${currentTime.format("HH:mm")}`}
-                            statusIcon={
-                              todayAttendance?.breakIn ? (
-                                <IconCircleCheckFilled className="text-green-500" />
-                              ) : (
-                                <IconCircle className="text-zinc-400" />
-                              )
-                            }
-                            statusLabel={"Selesai"}
-                            icon={<IconCoffeeOff />}
-                            statusClass={`${
-                              todayAttendance?.breakIn ? "bg-gradient-to-br from-green-500 to-teal-400 text-white" : "bg-zinc-50 text-zinc-600"
-                            }`}
-                            iconClass={`${todayAttendance?.breakIn ? "text-white" : "text-indigo-600"}`}
-                          />
-                          <AttendanceItem
-                            time={todayAttendance?.clockOut || "16:30"}
-                            label="Jam pulang"
-                            statusLabel={"Jam Pulang"}
-                            statusIcon={
-                              todayAttendance?.clockOut ? (
-                                <IconCircleCheckFilled className="text-green-500" />
-                              ) : (
-                                <IconCircle className="text-zinc-400" />
-                              )
-                            }
-                            status={`Jam ${currentTime.format("HH:mm")}`}
-                            icon={<IconTransferOut />}
-                            statusClass={`${
-                              todayAttendance?.clockOut ? "bg-gradient-to-br from-green-500 to-teal-400 text-white" : "bg-zinc-50 text-zinc-600"
-                            }`}
-                            iconClass={`${todayAttendance?.clockOut ? "text-white" : "text-indigo-600"}`}
-                          />
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  {!isDisabled() && (
-                    <div
-                      className="w-full mt-6"
-                      onMouseMove={onSwipe}
-                      onTouchMove={onSwipe}
-                      onMouseUp={stopSwipe}
-                      onTouchEnd={stopSwipe}
-                      onMouseDown={startSwipe}
-                      onTouchStart={startSwipe}
-                    >
-                      <div className="bg-slate-100 w-full rounded-full p-2 relative">
-                        <div className="absolute inset-0 flex items-center justify-center text-center z-0">
-                          <p className="text-slate-500">
-                            {(() => {
-                              if (todayAttendance?.clockIn && !todayAttendance?.breakOut) {
-                                return "Isitrahat";
-                              } else if (todayAttendance?.breakOut && !todayAttendance?.breakIn) {
-                                return "Selesai Istirahat";
-                              } else if (todayAttendance?.breakIn && !todayAttendance?.clockOut) {
-                                return "Pulang";
-                              } else if ((todayAttendance?.clockIn, todayAttendance?.clockOut, todayAttendance?.breakIn, todayAttendance?.breakOut)) {
-                                return "Selesai";
-                              } else {
-                                return "Masuk";
-                              }
-                            })()}
-                          </p>
-                        </div>
-                        <div
-                          className="bg-indigo-500 z-10 flex items-center justify-center text-white font-bold h-12 w-12 rounded-full cursor-pointer"
-                          style={{ transform: `translateX(${position}px)` }}
-                        >
-                          {recordAttendanceLoading ? (
-                            <div className="animate-spin">
-                              <IconLoader2 />
-                            </div>
-                          ) : (
-                            <IconArrowRight />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <ActivityList activities={activities || []} />
             </div>
           </div>
         </Layouts>
         {error && (
-          <>
-            <div className="fixed inset-0 bg-black bg-opacity-50 z-10"></div>
-            <div className="fixed bottom-0 bg-white w-full h-96 z-20 animate-slideUp rounded-t-2xl px-5 py-5">
-              <div className="flex items-center justify-center flex-col">
-                <div className="text-center">
-                  <img src={Forbidden} className="w-48 mx-auto mt-12" alt="Attendance Error" />
-                  <p className="mt-4 text-xs text-red-600 font-semibold">
-                    Mohon maaf, sistem mendeteksi ada ketidaksesuaian pada absensi Anda. Silakan coba lagi atau hubungi admin jika membutuhkan
-                    bantuan.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </>
+          <AutoCloseModal
+            message="Mohon maaf, sistem mendeteksi ada ketidaksesuaian pada absensi Anda. Silakan coba lagi atau hubungi admin jika membutuhkan bantuan."
+            show={error}
+            duration={5000}
+          />
+        )}
+
+        {successModal && (
+          <AutoCloseModal
+            message={
+              todayAttendance?.clockIn && !todayAttendance?.clockOut
+                ? todayAttendance?.status === "Terlambat"
+                  ? "Absensi masuk berhasil, namun Anda terlambat. Tetap semangat!"
+                  : "Absensi masuk berhasil. Selamat bekerja!"
+                : todayAttendance?.clockOut
+                ? "Absensi pulang berhasil. Terima kasih atas kerja keras hari ini!"
+                : "Mohon maaf, sistem mendeteksi ada ketidaksesuaian pada absensi Anda."
+            }
+            onClose={() => setSuccessModal(false)}
+            show={successModal}
+            duration={5000}
+            icon={
+              todayAttendance?.clockIn && !todayAttendance?.clockOut ? (
+                todayAttendance?.status === "Terlambat" ? (
+                  <IconAlertCircle className="mx-auto text-yellow-500 w-16 h-16 mb-4" />
+                ) : (
+                  <IconCircleCheck className="mx-auto text-green-500 w-16 h-16 mb-4" />
+                )
+              ) : todayAttendance?.clockOut ? (
+                <IconCircleCheck className="mx-auto text-blue-500 w-16 h-16 mb-4" />
+              ) : (
+                <IconCircleX className="mx-auto text-red-500 w-16 h-16 mb-4" />
+              )
+            }
+          />
         )}
       </div>
+
+      <BottomNavigation actionButton={<ActionButton loading={recordAttendanceLoading} onClick={doPostFetch} status={todayAttendance?.status} visible={isDisabled()} />} />
     </>
   );
 };
 
-const AttendanceItem = ({ time, label, statusLabel, status, icon, statusClass, iconClass, statusIcon }) => (
-  <div className="flex w-full items-center py-2">
-    <div className="flex w-1/2 flex-col items-start relative">
-      <h1 className="text-slate-800 font-semibold">{time}</h1>
-      <p className="text-[12px] text-zinc-400">{label}</p>
-      <div className="absolute -left-9 top-2 bg-white rounded-full">{statusIcon}</div>
-    </div>
-    <div className={`w-1/2 border rounded-xl py-2 px-3 flex items-center justify-between ${statusClass}`}>
-      <div className="flex flex-col gap-1">
-        <h1 className="text-sm font-semibold whitespace-nowrap">{statusLabel}</h1>
-        <span className="text-[10px]">{status}</span>
-      </div>
-      <div className={iconClass}>{icon}</div>
-    </div>
-  </div>
-);
-
 export default Homepage;
 
-// <button
-//   onClick={handleAttendance}
-//   disabled={isDisabled()}
-//   className={`w-full bg-gradient-to-br from-indigo-600 to-indigo-500 text-white border border-zinc-200 px-5 flex justify-between items-center shadow py-3 mt-6 rounded-xl ${
-//     isDisabled() ? "opacity-50 cursor-not-allowed" : ""
-//   }`}
-// >
-//   <div className="flex flex-col text-start">
-//     <h1 className="text-lg font-semibold">
-//       {(() => {
-//         if (todayAttendance?.clockIn && !todayAttendance?.breakOut) {
-//           return "Beristirahat";
-//         } else if (todayAttendance?.breakOut && !todayAttendance?.breakIn) {
-//           return "Selesai Istirahat";
-//         } else if (todayAttendance?.breakIn && !todayAttendance?.clockOut) {
-//           return "Pulang";
-//         } else if ((todayAttendance?.clockIn, todayAttendance?.clockOut, todayAttendance?.breakIn, todayAttendance?.breakOut)) {
-//           return "Selesai";
-//         } else {
-//           return "Masuk";
-//         }
-//       })()}
-//     </h1>
+function ShiftCard({
+  status = "Terlambat",
+  remainingTime = "7 hours 8 minutes",
+  startTime = "N/A",
+  endTime = "N/A",
+  employeeId = "-",
+  shiftName = "-",
+  employmentStatus = "-",
+  jobRole = "N/A",
+}) {
+  const statusColors = {
+    Hadir: "text-green-600 bg-green-100",
+    Terlambat: "text-yellow-700 bg-yellow-100",
+    "Tidak Masuk": "text-red-600 bg-red-100",
+    "Pulang Awal": "text-blue-600 bg-blue-100",
+    "Izin Cuti": "text-purple-600 bg-purple-100",
+  };
 
-//     <p className="text-xs">Jam {currentTime.format("HH:mm")}</p>
-//   </div>
+  const textStatusColors = {
+    Hadir: "text-green-600",
+    Terlambat: "text-yellow-700",
+    "Tidak Masuk": "text-red-600 ",
+    "Pulang Awal": "text-blue-600 ",
+    "Izin Cuti": "text-purple-600 ",
+  };
 
-//   <IconClockPlay />
-// </button>
+  const badgeClass = statusColors[status] || "text-gray-600 bg-gray-100";
+  const clockColor = textStatusColors[status] || "text-gray-600";
+
+  return (
+    <div className="w-full mx-auto rounded-xl border border-gray-200 shadow-sm bg-white overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="text-xs text-gray-600">
+          <p className="font-semibold text-sm text-gray-800">{employeeId}</p>
+          <p className="text-[11px]">Shift {shiftName}</p>
+        </div>
+        <div className="text-xs text-gray-600 text-end">
+          <p className="font-semibold capitalize text-sm text-gray-800">{jobRole}</p>
+          <p className="capitalize text-[11px]">{employmentStatus ? employmentStatus.replaceAll("_", " ") : "-"}</p>
+        </div>
+      </div>
+      <div>
+        <div className="grid grid-cols-2 gap-2 px-4 py-3 bg-gray-50 text-sm text-gray-600">
+          {/* Jam Masuk */}
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <IconClockPlay size={16} className={`text-green-500`} />
+              <span className="text-[10px] uppercase tracking-wide text-gray-400">Jam Masuk</span>
+            </div>
+            <span className={`font-medium ml-6 ${clockColor}`}>{startTime ?? "N/A"}</span>
+          </div>
+
+          {/* Jam Pulang */}
+          <div className="flex flex-col items-end">
+            <div className="flex items-center gap-2">
+              <IconClockStop size={16} className={` text-blue-500`} />
+              <span className="text-[10px] uppercase tracking-wide text-gray-400">Jam Pulang</span>
+            </div>
+            <span className={`font-medium ${endTime !== "N/A" ? clockColor : "text-gray-600"}`}>{endTime ?? "N/A"}</span>
+          </div>
+        </div>
+
+        <div className="h-px bg-gray-100" />
+
+        <div className="flex items-center justify-between px-4 py-2 text-xs">
+          <div className="text-start text-xs">
+            <p className="text-gray-600">Waktu Jam Kerja Tersisa</p>
+            <p className="font-semibold text-indigo-600">{remainingTime}</p>
+          </div>
+
+          <span className={`px-2 py-0.5 rounded-full font-medium text-xs tracking-wide ${badgeClass}`}>{status}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ActionButton({ onClick, loading, status, visible }) {
+  const statusColors = {
+    Hadir: "bg-green-500 hover:bg-green-600 disabled:bg-green-300",
+    Terlambat: "bg-yellow-500 hover:bg-yellow-600 disabled:bg-yellow-300",
+    "Tidak Masuk": "bg-red-500 hover:bg-red-600 disabled:bg-red-300",
+    "Pulang Awal": "bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300",
+    "Izin Cuti": "bg-purple-500 hover:bg-purple-600 disabled:bg-purple-300",
+  };
+
+  const buttonColor = statusColors[status] || "bg-indigo-500 hover:bg-indigo-600 disabled:bg-indigo-300";
+
+  return (
+    <button
+      type="button"
+      aria-label="Absen"
+      title={`Absen - ${status || "Status Tidak Diketahui"}`}
+      onClick={onClick}
+      disabled={loading || !visible}
+      className={`
+          w-20 h-20 rounded-full flex items-center justify-center
+          shadow-md border-4 border-white transition-all duration-150
+          text-white disabled:cursor-not-allowed
+          ${buttonColor}
+        `}>
+      {loading ? <IconLoader2 size={40} className="text-white animate-spin" /> : <IconFingerprint size={40} className="text-white" />}
+    </button>
+  );
+}
+
+function Header({ showDot, profilePicture, profile }) {
+  const fullName = profile?.fullName ?? "User";
+
+  return (
+    <header className="flex items-center justify-between px-4 py-3 absolute top-0 left-0 right-0 z-20 bg-transparent">
+      <div className="flex flex-col items-start">
+        {" "}
+        <span className="text-sm font-semibold text-white">{fullName}</span>
+        <span className="text-xs text-white italic opacity-75">{getMotivation()}</span>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Link to={"/notification"} className="relative p-1 rounded-full hover:bg-gray-100/20 transition-all duration-300 ease-in-out">
+          <IconBell className="w-5 h-5 text-white" />
+          {showDot && <span className="absolute top-0 right-0 block w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />}
+        </Link>
+
+        <div className="flex items-center gap-2">
+          <Link to={"/settings"}>
+            <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+              {profilePicture ? (
+                <img
+                  src={profilePicture}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                    e.currentTarget.parentNode.querySelector("span").style.display = "flex";
+                  }}
+                />
+              ) : null}{" "}
+              <span
+                className="text-sm font-semibold text-gray-800"
+                style={{
+                  display: profilePicture ? "none" : "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "100%",
+                  height: "100%",
+                }}>
+                {fullName ? fullName.charAt(0).toUpperCase() : "P"}
+              </span>
+            </div>
+          </Link>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function getRemainingTimeFromWorkingHours(workingHours) {
+  const now = new Date();
+  const [outHour, outMinute, outSecond] = workingHours?.clockOut?.split(":").map(Number) || [0, 0, 0];
+
+  const todayClockOut = new Date(now);
+  todayClockOut.setHours(outHour, outMinute, outSecond, 0);
+
+  const diffMs = todayClockOut.getTime() - now.getTime();
+
+  if (diffMs <= 0) return "Selesai";
+
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+  return `${diffHours} jam ${diffMinutes} menit`;
+}
+
+function ActivityList({ activities }) {
+  const statusMap = {
+    success: { icon: <IconCircleCheck size={18} />, color: "text-green-500" },
+    failed: { icon: <IconCircleX size={18} />, color: "text-red-500" },
+    pending: { icon: <IconAlertCircle size={18} />, color: "text-yellow-500" },
+  };
+
+  return (
+    <div className="w-full mt-3 px-4 rounded-3xl py-4 bg-white shadow-sm">
+      {" "}
+      <h3 className="text-base font-semibold text-gray-800 mb-3 flex justify-between items-center">
+        Riwayat Aktivitas
+        <Link to="/activity" className="text-sm text-indigo-500 hover:underline">
+          Lihat Semua
+        </Link>
+      </h3>
+      <ul className="divide-y divide-gray-200">
+        {activities?.length > 0 ? (
+          activities.slice(0, 7).map((item) => {
+            const statusInfo = statusMap[item.status] || {
+              icon: <IconCircleX size={18} className="text-gray-400" />,
+              color: "text-gray-700",
+            };
+
+            const activityInfo = {
+              label: item.activity.replace(/_/g, " ") || "Aktivitas Tidak Dikenal",
+            };
+
+            const formattedDate = item.createdAt ? format(parseISO(item.createdAt), "dd MMMM yyyy, HH:mm", { locale: id }) : "-";
+
+            return (
+              <li key={item.id} className="flex items-start gap-3 py-4">
+                <div className="flex-grow">
+                  <p className="text-sm font-medium text-gray-800 flex items-center">
+                    <span className={`mr-2 text-xs font-semibold ${statusInfo.color}`}>{statusInfo.icon}</span>
+                    <span className="capitalize"> {activityInfo.label}</span>
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">{item.meta?.reason || `Status: ${item.status}`}</p>
+                  <p className="text-xs text-gray-400 mt-1">{formattedDate}</p>
+                </div>
+              </li>
+            );
+          })
+        ) : (
+          <li className="py-4 text-center text-gray-500">Tidak ada aktivitas terbaru.</li>
+        )}
+      </ul>
+    </div>
+  );
+}

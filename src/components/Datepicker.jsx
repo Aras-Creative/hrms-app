@@ -2,7 +2,7 @@ import { IconArrowLeft, IconArrowRight } from "@tabler/icons-react";
 import React, { useState } from "react";
 import DatePicker from "tailwind-datepicker-react";
 
-const Datepicker = ({ onChange, defaultDate, isDisabled, label, style = "py-0.5 mt-3", border = "border border-zinc-300" }) => {
+const Datepicker = ({ onChange, defaultDate, isDisabled, label, style = "py-0.5 mt-3", border = "border border-zinc-300", maxDate }) => {
   const [show, setShow] = useState(false);
 
   const handleClose = (state) => {
@@ -15,7 +15,7 @@ const Datepicker = ({ onChange, defaultDate, isDisabled, label, style = "py-0.5 
     todayBtn: false,
     clearBtn: true,
     clearBtnText: "Clear",
-    maxDate: new Date("2030-01-01"),
+    maxDate: maxDate || new Date("2030-01-01"),
     minDate: new Date("1950-01-01"),
     theme: {
       background: "bg-white",

@@ -25,7 +25,7 @@ export const checkTime = (timeToCheck, treshold, isEarlyClockOutCheck = false) =
   currentTime.setHours(checkHours, checkMinutes, checkSeconds);
 
   if (isEarlyClockOutCheck) {
-    return currentTime <= referenceTime;
+    return currentTime < referenceTime;
   }
   return currentTime > referenceTime;
 };

@@ -1,15 +1,12 @@
 import {
   IconBriefcase,
   IconCalendar,
+  IconClock,
   IconCurrencyDollar,
-  IconFile,
+  IconFileDescription,
   IconFolder,
-  IconHeadset,
-  IconHelpCircle,
   IconHome,
   IconMailOpened,
-  IconMenu2,
-  IconSettings,
   IconUserCircle,
 } from "@tabler/icons-react";
 import { NavLink } from "react-router-dom";
@@ -27,6 +24,8 @@ const linkGroups = [
     links: [
       { to: "/dashboard/employee", icon: <IconUserCircle /> },
       { to: "/dashboard/jobrole", icon: <IconBriefcase /> },
+      { to: "/dashboard/shift", icon: <IconClock /> },
+      { to: "/dashboard/summary", icon: <IconFileDescription /> },
       { to: "/dashboard/document", icon: <IconFolder /> },
       { to: "/dashboard/payroll", icon: <IconCurrencyDollar /> },
     ],

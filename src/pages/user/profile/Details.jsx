@@ -25,7 +25,7 @@ const ProfileDetails = () => {
   });
   const [errors, setErrors] = useState({});
 
-  const { responseData: ProfilePicture } = useFetch(`/employee/profile-picture/${profile.userId}`);
+  const { responseData: ProfilePicture } = useFetch(`/employee/profile-picture/${profile?.userId}`);
 
   const { updateData, loading } = useFetch(
     `/profile/update/${profile?.userId}`,

@@ -67,60 +67,57 @@ export const validateEmployeeData = (data) => {
 
 export const validatePayrollData = (data) => {
   const errors = [];
-  const headers = data[0];
+  const headers = data[1];
 
   if (data.length > 100) {
     errors.push("Jumlah baris tidak boleh lebih dari 100.");
     return { errors, data: null };
   }
 
-  const validatedData = data
-    .slice(1)
-    .filter((row) => row.some((cell) => cell !== ""))
-    .map((row, rowIndex) => {
-      const rowObject = {};
+  const validatedData = data.slice(1).map((row, rowIndex) => {
+    const rowObject = {};
 
-      headers.forEach((header, colIndex) => {
-        const cell = row[colIndex];
+    headers.forEach((header, colIndex) => {
+      const cell = row[colIndex];
 
-        if (header === "No" && (typeof cell !== "number" || isNaN(cell))) {
-          errors.push(`Row ${rowIndex + 2}, Column "${header}": Harus berupa angka`);
-        }
+      if (header === "No" && (typeof cell !== "number" || isNaN(cell))) {
+        errors.push(`Row ${rowIndex + 2}, Column "${header}": Harus berupa angka`);
+      }
 
-        if (header === "Nama" && (typeof cell !== "string" || cell.trim() === "")) {
-          errors.push(`Row ${rowIndex + 2}, Column "${header}": Harus berupa teks yang tidak kosong`);
-        }
+      if (header === "Nama" && (typeof cell !== "string" || cell.trim() === "")) {
+        errors.push(`Row ${rowIndex + 2}, Column "${header}": Harus berupa teks yang tidak kosong`);
+      }
 
-        if (header === "Gaji Pokok" && (typeof cell !== "number" || isNaN(cell))) {
-          errors.push(`Row ${rowIndex + 2}, Column "${header}": Harus berupa angka`);
-        }
+      if (header === "Gaji Pokok" && (typeof cell !== "number" || isNaN(cell))) {
+        errors.push(`Row ${rowIndex + 2}, Column "${header}": Harus berupa angka`);
+      }
 
-        if (header.includes("Tunjangan") || header.includes("Potongan")) {
-          if (typeof cell === "string") {
-            const parsedValue = parseFloat(cell);
-            if (!isNaN(parsedValue)) {
-              if (parsedValue < 1) {
-                rowObject[header] = (parsedValue * 100).toFixed(1); // Simpan dalam object
-              } else {
-                rowObject[header] = parsedValue;
-              }
+      if (header.includes("Tunjangan") || header.includes("Potongan")) {
+        if (typeof cell === "string") {
+          const parsedValue = parseFloat(cell);
+          if (!isNaN(parsedValue)) {
+            if (parsedValue < 1) {
+              rowObject[header] = (parsedValue * 100).toFixed(1);
             } else {
-              errors.push(`Row ${rowIndex + 2}, Column "${header}": Harus berupa angka atau teks valid`);
+              rowObject[header] = parsedValue;
             }
-          } else if (typeof cell === "number") {
-            if (cell < 1) {
-              rowObject[header] = (cell * 100).toFixed(1);
-            } else {
-              rowObject[header] = cell;
-            }
+          } else {
+            errors.push(`Row ${rowIndex + 2}, Column "${header}": Harus berupa angka atau teks valid`);
           }
-        } else {
-          rowObject[header] = cell; // Simpan data untuk kolom selain "Tunjangan" atau "Potongan"
+        } else if (typeof cell === "number") {
+          if (cell < 1) {
+            rowObject[header] = (cell * 100).toFixed(1);
+          } else {
+            rowObject[header] = cell;
+          }
         }
-      });
-
-      return rowObject; // Mengembalikan row sebagai object
+      } else {
+        rowObject[header] = cell;
+      }
     });
+
+    return rowObject;
+  });
 
   return errors.length > 0 ? { errors, data: null } : { errors: null, data: validatedData };
 };

@@ -87,25 +87,33 @@ const FileUpload = ({ label, updateFilesCb, error }) => {
             >
               <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" multiple accept=".docx, .pdf, .txt, image/*" />
 
-              <p className="text-sm text-gray-600 w-full">{isDragging ? "Drop files here" : "Drag & drop files or click to upload"}</p>
+              <p className="text-sm text-gray-600 w-full">{isDragging ? "Drop files here, maks. 10MB" : "Drag & drop files or click to upload"}</p>
             </div>
           </>
         ) : (
           <ul className="flex w-full">
-            {files.map((file, index) => (
-              <li key={index} className="text-sm w-full text-gray-600 flex items-center justify-between">
-                <div className="flex items-center gap-2 w-2/3">
-                  <div className="h-5 w-5 flex-shrink-0">{getFileIcon(file.type)}</div>
-                  <span className="truncate">{file.name}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-400">{(file.size / 1024).toFixed(2)} KB</span>
-                  <button onClick={() => handleRemoveFile(index)} className="text-red-500 hover:text-red-700">
-                    <IconTrash size={18} />
-                  </button>
-                </div>
-              </li>
-            ))}
+            {files.map((file, index) => {
+              const fileSizeMB = file.size / (1024 * 1024);
+              const isFileTooLarge = fileSizeMB > 1;
+
+              return (
+                <li key={index} className={`text-sm w-full flex items-center justify-between ${isFileTooLarge ? "text-red-500" : "text-gray-600"}`}>
+                  <div className="flex items-center gap-2 w-2/3">
+                    <div className="h-5 w-5 flex-shrink-0">{getFileIcon(file.type)}</div>
+                    {isFileTooLarge ? <span className="truncate">File terlalu besar, maks 10MB</span> : <span className="truncate">{file.name}</span>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs">{fileSizeMB.toFixed(2)} MB</span>
+                    <button
+                      onClick={() => handleRemoveFile(index)}
+                      className={`hover:text-red-700 ${isFileTooLarge ? "text-red-500" : "text-gray-400"}`}
+                    >
+                      <IconTrash size={18} />
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

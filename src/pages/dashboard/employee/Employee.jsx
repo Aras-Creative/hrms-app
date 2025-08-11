@@ -2,8 +2,8 @@ import React, { useEffect, useReducer, useMemo, useState } from "react";
 import useFetch from "../../../hooks/useFetch";
 import {
   IconAddressBook,
+  IconAlarm,
   IconBriefcase,
-  IconDots,
   IconDownload,
   IconGenderBigender,
   IconGraph,
@@ -107,6 +107,7 @@ const Employee = () => {
   const [selectedUserIds, setSelectedUserIds] = useState([]);
   const [contractStart, setContractStart] = useState(new Date());
   const [contractEnd, setContractEnd] = useState(new Date());
+  const [shiftOptions, setShiftOptions] = useState(new Date());
 
   const {
     responseData: employeeData,
@@ -115,6 +116,7 @@ const Employee = () => {
     totalPages: employeeDataPages,
     refetch: employeeDataRefetch,
   } = useFetch(url, { currentPage, pageSize });
+  const { responseData: shiftData, refetch: shiftRefetch, loading: shiftLoading, error: shiftErr } = useFetch(`/shift`);
 
   useEffect(() => {
     if (debouncedSearchQuery) {
@@ -136,6 +138,13 @@ const Employee = () => {
     fetchJobRoles(true, dispatch);
   }, [filter]);
 
+  useEffect(() => {
+    if (shiftData && !shiftLoading && !shiftErr) {
+      const options = shiftData?.map((shift, idx) => ({ label: `${shift.name} ( ${shift.clockIn} - ${shift.clockOut})`, value: shift.id }));
+      setShiftOptions(options);
+    }
+  }, [shiftData]);
+
   const handleCheckboxChange = (event) => {
     const isChecked = event.target.checked;
     const userId = event.target.value;
@@ -147,16 +156,6 @@ const Employee = () => {
       }
     });
   };
-
-  // const handleSelectAllChange = (e) => {
-  //   if (e.target.checked) {
-  //     const allIds = employeeData?.map((row) => row.userId);
-  //     console.log(allIds);
-  //     // setSelectedUserIds(allIds);
-  //   } else {
-  //     setSelectedUserIds([]);
-  //   }
-  // };
 
   const employeeColumns = useMemo(
     () => [
@@ -176,24 +175,43 @@ const Employee = () => {
               </div>
 
               {profileImage ? (
-                <div className="w-10 h-10 rounded-full overflow-hidden">
+                <NavLink to={`/dashboard/employee/${rowData?.userId}/details`} className="w-8 h-8 rounded-full overflow-hidden">
                   <img src={profileImage} alt={`${value}'s Profile`} className="w-full h-full object-cover" />
-                </div>
+                </NavLink>
               ) : (
-                <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-slate-800 text-sm">
+                <NavLink
+                  to={`/dashboard/employee/${rowData?.userId}/details`}
+                  className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-slate-800 text-sm"
+                >
                   {value?.[0]?.toUpperCase() || "?"}
-                </div>
+                </NavLink>
               )}
               <div className="flex flex-col">
-                <span className="font-bold 2xl:w-full sm:w-24 lg:w-48 truncate">{value}</span>
+                <span className="font-bold 2xl:w-full sm:w-24 lg:w-36 truncate overflow-hidden text-sm">{value}</span>
                 <p className="text-xs text-slate-800 font-normal">{rowData?.employeeId}</p>
               </div>
             </div>
           );
         },
       },
-      { key: "gender", label: "Jenis Kelamin", icon: <IconGenderBigender size={20} />, render: (value) => value || "-" },
-      { key: "jobRole", label: "Job Role", icon: <IconBriefcase size={20} />, render: (value) => value?.jobRoleTitle },
+      {
+        key: "gender",
+        label: "Jenis Kelamin",
+        icon: <IconGenderBigender size={20} />,
+        render: (value) => <span className="text-sm">{value || "?"}</span>,
+      },
+      {
+        key: "jobRole",
+        label: "Job Role",
+        icon: <IconBriefcase size={20} />,
+        render: (value) => <span className="text-sm">{value?.jobRoleTitle || "?"}</span>,
+      },
+      {
+        key: "workingHours",
+        label: "Jam Kerja",
+        icon: <IconAlarm />,
+        render: (value) => (value ? <span className="text-sm">{`${value.clockIn || "N/A"} - ${value.clockOut || "N/A"}`}</span> : "-"),
+      },
       {
         key: "status",
         label: "Status",
@@ -208,7 +226,7 @@ const Employee = () => {
                 : value === "peringatan"
                 ? "bg-yellow-100 text-yellow-500 border-yellow-500"
                 : "bg-zinc-100 text-zinc-500"
-            } inline-flex rounded-full border px-2 py-1`}
+            } inline-flex rounded-full border px-2 py-1 text-xs`}
           >
             {toTitleCase(value)}
           </div>
@@ -234,17 +252,6 @@ const Employee = () => {
           </div>
         ),
       },
-
-      {
-        key: "userId",
-        label: "Action",
-        icon: "",
-        render: (value, rowData) => (
-          <NavLink to={`/dashboard/employee/${value}/details`}>
-            <IconDots />
-          </NavLink>
-        ),
-      },
     ],
     []
   );
@@ -253,7 +260,8 @@ const Employee = () => {
     dispatch({ type: "SET_TABLE_VIEW", payload: view });
   };
 
-  const { updateData: updateJobRoleData = [], loading: updateJobroleLoading } = useFetch("employee/jobrole/update");
+  const { updateData: updateJobRoleData = [], loading: updateJobroleLoading } = useFetch("employee/jobrole/update", { method: "PUT" });
+  const { updateData: updateShiftData = [], loading: updateShiftLoading } = useFetch("employee/shift/update", { method: "PUT" });
 
   const updateJobRole = async (value) => {
     const data = {
@@ -261,6 +269,19 @@ const Employee = () => {
       userIds: selectedUserIds,
     };
     const { success } = await updateJobRoleData(data);
+    if (success) {
+      setSelectedUserIds([]);
+      employeeDataRefetch();
+      setModal({ title: "" });
+    }
+  };
+
+  const updateShift = async (value) => {
+    const data = {
+      shiftId: value,
+      userIds: selectedUserIds,
+    };
+    const { success } = await updateShiftData(data);
     if (success) {
       setSelectedUserIds([]);
       employeeDataRefetch();
@@ -298,12 +319,6 @@ const Employee = () => {
                 <IconPlus size={20} />
                 <span className="text-sm text-white font-bold">Tambah Data Karyawan</span>
               </NavLink>
-              <ExcelUpload
-                postUrl={"/document/employee"}
-                expectedHeaders={["No", "Nama", "Tempat Lahir", "Tanggal Lahir", "NIK KTP", "Alamat"]}
-                columns={EmployeeColumns}
-                validate={validateEmployeeData}
-              />
 
               <button
                 type="button"
@@ -379,6 +394,13 @@ const Employee = () => {
               >
                 Update Job Role
               </button>
+
+              <button
+                className="px-4 py-2 text-sm font-medium text-white bg-emerald-700 rounded-lg hover:bg-emerald-900 focus:outline-none"
+                onClick={() => setModal({ title: "Atur Jam Kerja" })}
+              >
+                Atur Jam Kerja
+              </button>
             </div>
           </div>
         </div>
@@ -404,6 +426,17 @@ const Employee = () => {
                 onChange={(e) => updateJobRole(e.value)}
                 disabled={updateJobroleLoading}
               />
+            ) : modal.title === "Atur Jam Kerja" ? (
+              <>
+                <FormInput
+                  type="select"
+                  options={shiftOptions}
+                  placeholder={"Select Jam Kerja"}
+                  label={"Jam Kerja"}
+                  onChange={(e) => updateShift(e.value)}
+                  disabled={updateShiftLoading}
+                />
+              </>
             ) : (
               <div className="w-full flex flex-col items-center p-4">
                 <div className="grid grid-cols-2 gap-4 w-full">

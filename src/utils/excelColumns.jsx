@@ -59,7 +59,8 @@ export const EmployeeColumns = (data) => {
 };
 
 export const PayrollColumns = (data) => {
-  const headers = data[0];
+  const headers = data[1];
+
   const tunjanganKeys = new Set();
   const potonganKeys = new Set();
   headers?.forEach((header) => {
@@ -95,6 +96,57 @@ export const PayrollColumns = (data) => {
       render: (value) => value || "-",
     },
     {
+      key: "Hadir",
+      label: "Hadir",
+      render: (value) => value || "-",
+    },
+    {
+      key: "Sakit",
+      label: "Sakit",
+      render: (value) => value || "-",
+    },
+    {
+      key: "Cuti",
+      label: "Cuti",
+      render: (value) => value || "-",
+    },
+    {
+      key: "Izin",
+      label: "Izin",
+      render: (value) => value || "-",
+    },
+
+    {
+      key: "Absen",
+      label: "Absen",
+      render: (value) => value || "-",
+    },
+    {
+      key: "Terlambat",
+      label: "Terlambat",
+      render: (value) => value || "-",
+    },
+    {
+      key: "Total Kehadiran",
+      label: "Total Kehadiran",
+      render: (value) => value || "-",
+    },
+    {
+      key: "Tunjangan Makan",
+      label: "Tunjangan Makan",
+      render: (value) => value || "-",
+    },
+    {
+      key: "Tunjangan Transport",
+      label: "Tunjangan Transport",
+      render: (value) => value || "-",
+    },
+    {
+      key: "Gaji Perhari",
+      label: "Gaji Perhari",
+      render: (value) => value || "-",
+    },
+    {
       key: "Gaji Pokok",
       label: "Gaji Pokok",
       render: (value) => formatCurrency(value) || "-",
@@ -103,3 +155,87 @@ export const PayrollColumns = (data) => {
     ...potonganColumns,
   ];
 };
+
+// export const PayrollColumns = (data) => {
+//   const headers = data[1];
+
+//   return [
+//     {
+//       key: "No",
+//       label: "#No",
+//       render: (value) => value,
+//     },
+//     {
+//       key: "Nama",
+//       label: "Nama",
+//       render: (value) => value || "-",
+//     },
+//     {
+//       key: "Gaji Pokok",
+//       label: "Hadir",
+//       render: (value) => value || "-",
+//     },{
+//       key: "Tunjangan Jabatan",
+//       label: "Tunjangan Jabatan",
+//       render: (value) => value || "-",
+//     },
+
+//     {
+//       key: "Tunjangan Jabatan",
+//       label: "Tunjangan Jabatan",
+//       render: (value) => value || "-",
+//     },
+//     {
+//       key: "Cuti",
+//       label: "Cuti",
+//       render: (value) => value || "-",
+//     },
+//     {
+//       key: "Izin",
+//       label: "Izin",
+//       render: (value) => value || "-",
+//     },
+//     {
+//       key: "Sakit",
+//       label: "Sakit",
+//       render: (value) => value || "-",
+//     },
+//     {
+//       key: "Absen",
+//       label: "Absen",
+//       render: (value) => value || "-",
+//     },
+//     {
+//       key: "Terlambat",
+//       label: "Terlambat",
+//       render: (value) => value || "-",
+//     },
+//     {
+//       key: "Total Kehadiran",
+//       label: "Total Kehadiran",
+//       render: (value) => value || "-",
+//     },
+//     {
+//       key: "Tunjangan Makan",
+//       label: "Tunjangan Makan",
+//       render: (value) => value || "-",
+//     },
+//     {
+//       key: "Tunjangan Transport",
+//       label: "Tunjangan Transport",
+//       render: (value) => value || "-",
+//     },
+//     {
+//       key: "Gaji Perhari",
+//       label: "Gaji Perhari",
+//       render: (value) => value || "-",
+//     },
+//     {
+//       key: "Gaji Pokok",
+//       label: "Gaji Pokok",
+//       render: (value) => formatCurrency(value) || "-",
+//     },
+//     ...tunjanganColumns,
+//     ...potonganColumns,
+//   ];
+// };
