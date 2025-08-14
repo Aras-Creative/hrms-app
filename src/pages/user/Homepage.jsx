@@ -326,7 +326,7 @@ const Homepage = () => {
                           </div>
 
                           <div className="text-sm text-gray-600">
-                            <span className="font-medium">{format(new Date(item.date), "eeee")}</span>, {format(new Date(item.date), "d MMM yyyy")}
+                            <span className="font-medium">{format(new Date(item.date), "eeee", {locale: id})}</span>, {format(new Date(item.date), "d MMM yyyy", {locale: id})}
                           </div>
 
                           <div className="text-xs text-gray-500 mt-0.5">
@@ -382,7 +382,7 @@ const Homepage = () => {
         )}
       </div>
 
-      <BottomNavigation actionButton={<ActionButton loading={recordAttendanceLoading} onClick={doPostFetch} status={todayAttendance?.status} visible={isDisabled()} />} />
+      <BottomNavigation actionButton={<ActionButton loading={recordAttendanceLoading} onClick={doPostFetch} status={todayAttendance?.status} visible={!isDisabled()} />} />
     </>
   );
 };

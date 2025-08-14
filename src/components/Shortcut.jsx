@@ -4,10 +4,10 @@ import { IconCalendar, IconFileInvoice, IconClockHour4, IconClipboardText, IconL
 const Shortcut = () => {
   const items = [
     { label: "Kalender", icon: <IconCalendar size={18} />, color: "text-blue-500", path: "/calendar" }, // Icon size even smaller
-    { label: "Izin & Cuti", icon: <IconClipboardText size={18} />, color: "text-green-500", path: "/leave" }, // Icon size even smaller
-    { label: "Kehadiran", icon: <IconClockHour4 size={18} />, color: "text-red-500", path: "/attendance-history" }, // Icon size even smaller
+    { label: "Izin & Cuti", icon: <IconClipboardText size={18} />, color: "text-green-500", path: "/leave/request" }, // Icon size even smaller
+    { label: "Kehadiran", icon: <IconClockHour4 size={18} />, color: "text-red-500", path: "/calendar-attendance" }, // Icon size even smaller
     { label: "Gaji", icon: <IconFileInvoice size={18} />, color: "text-purple-500", path: "/payslip" }, // Icon size even smaller
-    { label: "Aktivitas", icon: <IconListDetails size={18} />, color: "text-yellow-500", path: "/activity-history" }, // Icon size even smaller
+    { label: "Aktivitas", icon: <IconListDetails size={18} />, color: "text-yellow-500", path: "/activity" }, // Icon size even smaller
   ];
 
   return (
