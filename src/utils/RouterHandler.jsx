@@ -1,4 +1,4 @@
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Routes, Route, useNavigate, useRoutes } from "react-router-dom";
 import { AuthProvider } from "../context/AuthContext";
 import { AdminRoute, GuestRoute, UserPrivateRoute } from "../hoc/RouteGuard";
 import React, { Suspense, useEffect } from "react";
@@ -8,6 +8,7 @@ import Success from "../pages/user/Success";
 import UserCalendar from "../pages/user/Calendar";
 import Shift from "../pages/dashboard/Shift";
 import Summary from "../pages/dashboard/Summary";
+import { BackofficePages } from "../routes/backoffice-routes";
 
 const Login = React.lazy(() => import("../pages/Login"));
 const Dashboard = React.lazy(() => import("../pages/dashboard/Dashboard"));
@@ -52,6 +53,15 @@ function RouterHandler() {
           <Route path="/auth" element={<GuestRoute />}>
             <Route path="login" element={<Login />} />
           </Route>
+
+          <Route
+            path="leaves"
+            element={
+              <Suspense fallback={<div>Loading...</div>}>
+                <BackofficePages.Leaves />
+              </Suspense>
+            }
+          />
 
           <Route element={<UserPrivateRoute />}>
             <Route path="homepage" element={<Homepage />} />

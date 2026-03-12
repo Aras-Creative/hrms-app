@@ -13,6 +13,7 @@ import {
   IconCalendarExclamation,
   IconAlertCircle,
   IconClockStop,
+  IconClockPause,
 } from "@tabler/icons-react";
 import { Link } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
@@ -84,7 +85,7 @@ const Homepage = () => {
         notification: () => {
           setNotif(true);
         },
-      }
+      },
     );
 
     return cleanupSocket;
@@ -106,23 +107,9 @@ const Homepage = () => {
 
   const isDisabled = () => {
     const clockOut = todayAttendance?.clockOut;
-    const clockIn = todayAttendance?.clockIn;
-    const breakIn = todayAttendance?.breakIn;
-    const startShiftTime = moment(profile?.workingHours?.clockIn, "HH:mm:ss");
-    const endShiftTime = moment(profile?.workingHours?.clockOut, "HH:mm:ss");
-    const breakTime = startShiftTime.clone().add(2, "hours");
-    const now = moment();
-    const breakMoment = moment(breakTime, "HH:mm");
-    const thresholdMoment = moment(endShiftTime, "HH:mm");
-    const isBeforeBreakTime = now.isBefore(breakMoment);
-    const isBeforeThreshold = breakIn && now.isBefore(thresholdMoment);
-    return (
-      clockOut ||
-      (isBeforeThreshold && todayAttendance?.status !== "Pulang Awal") ||
-      todayAttendance?.status === "Izin Cuti" ||
-      (isBeforeBreakTime && clockIn) ||
-      (TodayEvent && TodayEvent?.type === "Holiday")
-    );
+    const status = todayAttendance?.status;
+
+    return clockOut || status === "Izin Cuti" || (TodayEvent && TodayEvent?.type === "Holiday");
   };
 
   const doPostFetch = async () => {
@@ -192,6 +179,12 @@ const Homepage = () => {
     },
   };
 
+  function formatHHMM(time) {
+    if (!time) return "N/A";
+    const [hours, minutes] = time.split(":");
+    return `${hours.padStart(2, "0")}:${minutes.padStart(2, "0")}`;
+  }
+
   const remainingTime = getRemainingTimeFromWorkingHours(profile?.workingHours);
   return (
     <>
@@ -200,7 +193,7 @@ const Homepage = () => {
           <div className="relative mb-12">
             <Header showDot={hasUnreadNotification} profilePicture={profilePicture} profile={profile ?? {}} />
             <div
-              className="py-20 px-4 h-88 text-white"
+              className="pt-20 px-4 h-88 text-white mb-8"
               style={{
                 backgroundImage: `linear-gradient(to bottom, #818CF8, #6366F1),
                 url(${subtleTexture})`,
@@ -215,8 +208,10 @@ const Homepage = () => {
                 employeeId={profile?.employeeId}
                 employmentStatus={profile?.status}
                 shiftName={profile?.workingHours?.name}
-                endTime={todayAttendance?.clockOut}
-                startTime={todayAttendance?.clockIn}
+                startTime={formatHHMM(todayAttendance?.clockIn)}
+                endTime={formatHHMM(todayAttendance?.clockOut)}
+                breakOutTime={formatHHMM(todayAttendance?.breakOut)}
+                breakInTime={formatHHMM(todayAttendance?.breakIn)}
               />
             </div>
             <div className="w-full mt-[-48px] relative z-10">
@@ -326,7 +321,7 @@ const Homepage = () => {
                           </div>
 
                           <div className="text-sm text-gray-600">
-                            <span className="font-medium">{format(new Date(item.date), "eeee", {locale: id})}</span>, {format(new Date(item.date), "d MMM yyyy", {locale: id})}
+                            <span className="font-medium">{format(new Date(item.date), "eeee", { locale: id })}</span>, {format(new Date(item.date), "d MMM yyyy", { locale: id })}
                           </div>
 
                           <div className="text-xs text-gray-500 mt-0.5">
@@ -359,8 +354,8 @@ const Homepage = () => {
                   ? "Absensi masuk berhasil, namun Anda terlambat. Tetap semangat!"
                   : "Absensi masuk berhasil. Selamat bekerja!"
                 : todayAttendance?.clockOut
-                ? "Absensi pulang berhasil. Terima kasih atas kerja keras hari ini!"
-                : "Mohon maaf, sistem mendeteksi ada ketidaksesuaian pada absensi Anda."
+                  ? "Absensi pulang berhasil. Terima kasih atas kerja keras hari ini!"
+                  : "Mohon maaf, sistem mendeteksi ada ketidaksesuaian pada absensi Anda."
             }
             onClose={() => setSuccessModal(false)}
             show={successModal}
@@ -391,8 +386,10 @@ export default Homepage;
 
 function ShiftCard({
   status = "Terlambat",
-  remainingTime = "7 hours 8 minutes",
+  remainingTime = "7 jam 8 menit",
   startTime = "N/A",
+  breakOutTime = "N/A",
+  breakInTime = "N/A",
   endTime = "N/A",
   employeeId = "-",
   shiftName = "-",
@@ -410,57 +407,94 @@ function ShiftCard({
   const textStatusColors = {
     Hadir: "text-green-600",
     Terlambat: "text-yellow-700",
-    "Tidak Masuk": "text-red-600 ",
-    "Pulang Awal": "text-blue-600 ",
-    "Izin Cuti": "text-purple-600 ",
+    "Tidak Masuk": "text-red-600",
+    "Pulang Awal": "text-blue-600",
+    "Izin Cuti": "text-purple-600",
   };
 
   const badgeClass = statusColors[status] || "text-gray-600 bg-gray-100";
-  const clockColor = textStatusColors[status] || "text-gray-600";
+
+  const timeFields = [
+    {
+      label: "Masuk",
+      subLabel: null,
+      value: startTime,
+      color: "text-green-600",
+      dot: "bg-green-500",
+    },
+    {
+      label: "Mulai",
+      subLabel: "Istirahat",
+      value: breakOutTime,
+      color: "text-orange-600",
+      dot: "bg-orange-500",
+    },
+    {
+      label: "Selesai",
+      subLabel: "Istirahat",
+      value: breakInTime,
+      color: "text-blue-600",
+      dot: "bg-blue-500",
+    },
+    {
+      label: "Pulang",
+      subLabel: null,
+      value: endTime,
+      color: "text-gray-400",
+      dot: "bg-zinc-200 border border-gray-300",
+    },
+  ];
+
+  const filledCount = [startTime, breakOutTime, breakInTime, endTime].filter((v) => v && v !== "N/A").length;
+  const progressWidth = filledCount === 0 ? "0%" : `${((filledCount - 1) / 3) * 100}%`;
 
   return (
     <div className="w-full mx-auto rounded-xl border border-gray-200 shadow-sm bg-white overflow-hidden">
+      {/* Header */}
       <div className="flex items-center justify-between px-4 py-3">
-        <div className="text-xs text-gray-600">
+        <div>
           <p className="font-semibold text-sm text-gray-800">{employeeId}</p>
-          <p className="text-[11px]">Shift {shiftName}</p>
+          <p className="text-[11px] text-gray-500">Shift {shiftName}</p>
         </div>
-        <div className="text-xs text-gray-600 text-end">
+        <div className="text-right">
           <p className="font-semibold capitalize text-sm text-gray-800">{jobRole}</p>
-          <p className="capitalize text-[11px]">{employmentStatus ? employmentStatus.replaceAll("_", " ") : "-"}</p>
+          <p className="capitalize text-[11px] text-gray-500">{employmentStatus ? employmentStatus.replaceAll("_", " ") : "-"}</p>
         </div>
       </div>
-      <div>
-        <div className="grid grid-cols-2 gap-2 px-4 py-3 bg-gray-50 text-sm text-gray-600">
-          {/* Jam Masuk */}
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <IconClockPlay size={16} className={`text-green-500`} />
-              <span className="text-[10px] uppercase tracking-wide text-gray-400">Jam Masuk</span>
+
+      {/* Timeline */}
+      <div className="border-t border-gray-100 bg-gray-50 px-5 py-4">
+        <div className="relative flex items-start justify-between">
+          {/* Track */}
+          <div className="absolute top-[6px] left-[6px] right-[6px] h-0.5 bg-gray-200" />
+          {/* Progress */}
+          <div className="absolute top-[6px] left-[6px] h-0.5 bg-lime-400 transition-all duration-500" style={{ width: progressWidth }} />
+
+          {timeFields.map(({ label, subLabel, value, color, dot }) => (
+            <div key={label} className="relative z-10 flex flex-col items-center gap-2">
+              <div className={`w-3.5 h-3.5 rounded-full border-2 border-white ${dot}`} />
+              <span className={`text-[12px] font-medium ${value && value !== "N/A" ? color : "text-gray-400"}`}>{value ?? "N/A"}</span>
+              <span className="text-[10px] text-gray-400 text-center leading-tight">
+                {label}
+                {subLabel && (
+                  <>
+                    <br />
+                    {subLabel}
+                  </>
+                )}
+              </span>
             </div>
-            <span className={`font-medium ml-6 ${clockColor}`}>{startTime ?? "N/A"}</span>
-          </div>
-
-          {/* Jam Pulang */}
-          <div className="flex flex-col items-end">
-            <div className="flex items-center gap-2">
-              <IconClockStop size={16} className={` text-blue-500`} />
-              <span className="text-[10px] uppercase tracking-wide text-gray-400">Jam Pulang</span>
-            </div>
-            <span className={`font-medium ${endTime !== "N/A" ? clockColor : "text-gray-600"}`}>{endTime ?? "N/A"}</span>
-          </div>
+          ))}
         </div>
+      </div>
 
-        <div className="h-px bg-gray-100" />
-
-        <div className="flex items-center justify-between px-4 py-2 text-xs">
-          <div className="text-start text-xs">
-            <p className="text-gray-600">Waktu Jam Kerja Tersisa</p>
-            <p className="font-semibold text-indigo-600">{remainingTime}</p>
-          </div>
-
-          <span className={`px-2 py-0.5 rounded-full font-medium text-xs tracking-wide ${badgeClass}`}>{status}</span>
+      {/* Footer */}
+      <div className="border-t border-gray-100 flex items-center justify-between px-4 py-2">
+        <div>
+          <p className="text-[11px] text-gray-500">Waktu Jam Kerja Tersisa</p>
+          <p className="text-[13px] font-semibold text-indigo-600">{remainingTime}</p>
         </div>
+        <span className={`px-2 py-0.5 rounded-full font-medium text-xs tracking-wide ${badgeClass}`}>{status}</span>
       </div>
     </div>
   );
